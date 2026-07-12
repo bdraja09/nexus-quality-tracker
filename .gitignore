@@ -1,0 +1,96 @@
+# ============================================================
+# Backend — Python / FastAPI / SQLModel / Alembic
+# ============================================================
+
+# Environnements virtuels
+env/
+venv/
+.venv/
+*/env/
+*/venv/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Variables d'environnement (secrets, jamais commitées)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Alembic — versions gardées, mais pas les caches
+backend/alembic/__pycache__/
+
+# Tests / couverture
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / build Python
+build/
+dist/
+*.egg-info/
+
+# Bases de données locales (si SQLite utilisé en test)
+*.sqlite3
+*.db
+
+
+# ============================================================
+# Frontend — Angular / Node
+# ============================================================
+
+# Dépendances
+node_modules/
+
+# Build Angular
+dist/
+.angular/
+frontend/.angular/
+
+# Cache npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers d'environnement Angular sensibles (si utilisés)
+frontend/src/environments/environment.prod.ts
+
+
+# ============================================================
+# Éditeurs / IDE
+# ============================================================
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+
+# ============================================================
+# Système d'exploitation
+# ============================================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# ============================================================
+# Divers projet
+# ============================================================
+
+# Scripts de données de test générées localement (pas les tables/CSV finaux)
+create_test_user.py
+*.local.py
+
+# Exports de données générés (dataset ML, s'ils sont volumineux)
+/exports/*.csv
+/exports/*.json
