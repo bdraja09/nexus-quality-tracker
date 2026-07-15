@@ -1,46 +1,38 @@
+from sqlmodel import Session
 from datetime import datetime
-from uuid import UUID, uuid4
-
-from sqlmodel import Session, select
-
-from app.enums import NCState
 from app.models.non_conformance import NonConformance
 from app.models.nc_event import NCEvent
-from app.models.root_cause import RootCause
-from app.models.corrective_action import CorrectiveAction
+from app.enums import NCState
 from app.services.state_machine import can_transition
+from app.services.id_generator import generate_id
 
 
 class InvalidTransitionError(Exception):
     pass
 
 
-def raise_nc(
-    session: Session,
-    title: str,
-    description: str,
-    severity,
-    dept_id: UUID,
-    raised_by: UUID,
-) -> NonConformance:
+def raise_nc(session: Session, title: str, description: str, severity, dept_id: str, raised_by: str) -> NonConformance:
+    nc_id = generate_id(session, "nc")
     nc = NonConformance(
-        ref_code=f"NC-{uuid4().hex[:8].upper()}",
+        id_nc=nc_id,
+        ref_code=nc_id,  
         title=title,
         description=description,
         severity=severity,
         dept_id=dept_id,
         raised_by=raised_by,
-        current_state=NCState.RAISED,
+        current_state=NCState.RAISED
     )
     session.add(nc)
     session.flush()
 
     event = NCEvent(
-        nc_id=nc.id,
+        id_event=generate_id(session, "event"),
+        nc_id=nc.id_nc,
         from_state=None,
         to_state=NCState.RAISED,
         actor_id=raised_by,
-        notes="NC créée",
+        notes="NC créée"
     )
     session.add(event)
 
@@ -49,13 +41,7 @@ def raise_nc(
     return nc
 
 
-def transition_nc(
-    session: Session,
-    nc_id: UUID,
-    to_state: NCState,
-    actor_id: UUID,
-    notes: str | None = None,
-) -> NonConformance:
+def transition_nc(session: Session, nc_id: str, to_state: NCState, actor_id: str, notes: str = None) -> NonConformance:
     nc = session.get(NonConformance, nc_id)
     if not nc:
         raise ValueError("NC introuvable")
@@ -64,11 +50,12 @@ def transition_nc(
         raise InvalidTransitionError(f"Transition {nc.current_state} → {to_state} interdite")
 
     event = NCEvent(
+        id_event=generate_id(session, "event"),
         nc_id=nc_id,
         from_state=nc.current_state,
         to_state=to_state,
         actor_id=actor_id,
-        notes=notes,
+        notes=notes
     )
     session.add(event)
 
@@ -82,54 +69,37 @@ def transition_nc(
     return nc
 
 
-def get_nc(session: Session, nc_id: UUID) -> NonConformance:
+def get_nc(session: Session, nc_id: str) -> NonConformance:
     nc = session.get(NonConformance, nc_id)
     if not nc:
         raise ValueError("NC introuvable")
     return nc
 
 
-def get_nc_events(session: Session, nc_id: UUID) -> list[NCEvent]:
-    return session.exec(
-        select(NCEvent)
-        .where(NCEvent.nc_id == nc_id)
-        .order_by(NCEvent.timestamp)
-    ).all()
+def get_nc_events(session: Session, nc_id: str) -> list[NCEvent]:
+    from sqlmodel import select
+    return session.exec(select(NCEvent).where(NCEvent.nc_id == nc_id).order_by(NCEvent.timestamp)).all()
 
 
-def add_root_cause(
-    session: Session,
-    nc_id: UUID,
-    category: str,
-    description: str,
-    identified_by: UUID,
-) -> RootCause:
-    root_cause = RootCause(
-        nc_id=nc_id,
-        category=category,
-        description=description,
-        identified_by=identified_by,
+def add_root_cause(session: Session, nc_id: str, category: str, description: str, identified_by: str):
+    from app.models.root_cause import RootCause
+    rc = RootCause(
+        id_cause=generate_id(session, "cause"),
+        nc_id=nc_id, category=category, description=description, identified_by=identified_by
     )
-    session.add(root_cause)
+    session.add(rc)
     session.commit()
-    session.refresh(root_cause)
-    return root_cause
+    session.refresh(rc)
+    return rc
 
 
-def add_corrective_action(
-    session: Session,
-    nc_id: UUID,
-    description: str,
-    assigned_to: UUID,
-    due_date,
-) -> CorrectiveAction:
-    action = CorrectiveAction(
-        nc_id=nc_id,
-        description=description,
-        assigned_to=assigned_to,
-        due_date=due_date,
+def add_corrective_action(session: Session, nc_id: str, description: str, assigned_to: str, due_date):
+    from app.models.corrective_action import CorrectiveAction
+    ca = CorrectiveAction(
+        id_action=generate_id(session, "action"),
+        nc_id=nc_id, description=description, assigned_to=assigned_to, due_date=due_date
     )
-    session.add(action)
+    session.add(ca)
     session.commit()
-    session.refresh(action)
-    return action
+    session.refresh(ca)
+    return ca

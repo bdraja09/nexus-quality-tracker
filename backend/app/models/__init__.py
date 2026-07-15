@@ -1,3 +1,4 @@
+from app.models.id_counter import IdCounter
 from .organisation import Organisation
 from .departement import Department
 from .user import User

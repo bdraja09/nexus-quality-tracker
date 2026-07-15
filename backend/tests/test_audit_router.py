@@ -10,17 +10,20 @@ Sur PostgreSQL en vrai (contraintes FK actives), il faudra soit créer
 un modèle Organization, soit rendre org_id nullable.
 """
 
+import os
+
+os.environ["USE_SQLITE_FOR_TESTS"] = "1"
+
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from uuid import uuid4
-from app.main import app
-from app.database import get_session
+from sqlmodel import Session, SQLModel
+from app.main import app as fastapi_app
+from app.database import get_session, engine
 from app.models.departement import Department
 from app.models.user import User
+from app.services.id_generator import generate_id
 import app.models  # force l'import de tous les modèles
 
 # --- Configuration de la base de test ---
-engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
 
 
 def override_get_session():
@@ -28,8 +31,11 @@ def override_get_session():
         yield session
 
 
-app.dependency_overrides[get_session] = override_get_session
-client = TestClient(app)
+fastapi_app.dependency_overrides[get_session] = override_get_session
+client = TestClient(fastapi_app)
+
+# Make sure the dependency engine and the test engine share the same schema.
+SQLModel.metadata.create_all(engine)
 
 DEPT_ID = None
 USER_ID = None
@@ -38,26 +44,27 @@ USER_ID = None
 def setup_module():
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
-        dept = Department(org_id=uuid4(), name="Production")
+        dept = Department(id_dept=generate_id(session, "dept"), org_id="org-test", name="Production")
         session.add(dept)
         session.commit()
         session.refresh(dept)
 
         user = User(
+            id_usr=generate_id(session, "usr"),
             email="auditeur@nexus.com",
             password="hash-factice-pour-les-tests",
             first_name="Alice",
             last_name="Dupont",
             role="manager",
-            departement_id=dept.id
+            departement_id=dept.id_dept,
         )
         session.add(user)
         session.commit()
         session.refresh(user)
 
         global DEPT_ID, USER_ID
-        DEPT_ID = str(dept.id)
-        USER_ID = str(user.id)
+        DEPT_ID = str(dept.id_dept)
+        USER_ID = str(user.id_usr)
 
 
 # ============================================================
@@ -65,6 +72,7 @@ def setup_module():
 # ============================================================
 
 def test_creer_audit():
+    SQLModel.metadata.create_all(engine)
     response = client.post("/audits/", json={
         "dept_id": DEPT_ID,
         "auditor_id": USER_ID,

@@ -1,8 +1,12 @@
 from sqlmodel import SQLModel, Field
-from uuid import UUID, uuid4
+
 
 class Organisation(SQLModel, table=True):
     __tablename__ = "organization"
-    
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    id_org: str = Field(primary_key=True)
     name: str
+
+    @property
+    def id(self) -> str:
+        return self.id_org
