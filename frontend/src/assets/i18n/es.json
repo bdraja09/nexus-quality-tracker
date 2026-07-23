@@ -1,0 +1,159 @@
+{
+  "MENUITEMS": {
+    "MAIN": {
+      "TEXT": "Principal"
+    },
+    "DASHBOARD": {
+      "TEXT": "Tablero",
+      "LIST": {
+        "DASHBOARD1": "Tablero 1",
+        "DASHBOARD2": "Tablero 2"
+      }
+    },
+    "PROJECTS": {
+      "TEXT": "Proyectos",
+      "LIST": {
+        "ALL-PROJECTS": "Todos los Proyectos",
+        "ADD-PROJECT": "Agregar Proyecto",
+        "ESTIMATES": "Estimaciones",
+        "PROJECT-DETAILS": "Detalles del Proyecto"
+      }
+    },
+    "EMPLOYEES": {
+      "TEXT": "Empleados",
+      "LIST": {
+        "ALL-EMPLOYEE": "Todos los Empleados",
+        "ADD-EMPLOYEE": "Agregar Empleado",
+        "EDIT-EMPLOYEE": "Editar Empleado",
+        "EMPLOYEE-SHIFT": "Turno de Empleado",
+        "PROFILE": "Perfil de Empleado"
+      }
+    },
+    "CLIENTS": {
+      "TEXT": "Clientes",
+      "LIST": {
+        "ALL-CLIENTS": "Todos los Clientes",
+        "ADD-CLIENT": "Agregar Cliente",
+        "EDIT-CLIENT": "Editar Cliente"
+      }
+    },
+    "ACCOUNTS": {
+      "TEXT": "Cuentas",
+      "LIST": {
+        "CLIENT-PAYMENTS": "Pagos de Clientes",
+        "ADD-PAYMENT": "Agregar Pago",
+        "INVOICE": "Factura"
+      }
+    },
+    "PAYROLL": {
+      "TEXT": "Nómina",
+      "LIST": {
+        "EMPLOYEE_SALARY": "Salario de Empleado",
+        "PAYSLIP": "Recibo de Sueldo"
+      }
+    },
+    "LEADERS": {
+      "TEXT": "Líderes"
+    },
+    "JOBS": {
+      "TEXT": "Trabajos",
+      "LIST": {
+        "JOBS_LIST": "Lista de Trabajos",
+        "RESUMES": "Currículos",
+        "CANDIDATES": "Candidatos",
+        "SHORTLIST_CANDIDATES": "Candidatos Preseleccionados"
+      }
+    },
+    "DEPARTMENTS": {
+      "TEXT": "Departamentos",
+      "LIST": {
+        "ALL-DEPARTMENT": "Todos los Departamentos",
+        "ADD-DEPARTMENT": "Agregar Departamento",
+        "EDIT-DEPARTMENT": "Editar Departamento"
+      }
+    },
+    "TRAINING": {
+      "TEXT": "Capacitación",
+      "LIST": {
+        "TRAINING-List": "Lista de Capacitación",
+        "TRAINERS": "Instructores",
+        "TRAINING-TYPE": "Tipo de Capacitación"
+      }
+    },
+    "REPORTS": {
+      "TEXT": "Informes",
+      "LIST": {
+        "LEAVE_REPORT": "Informe de Ausencias",
+        "EXPENSE_REPORT": "Informe de Gastos"
+      }
+    },
+    "EMPLOYEE": {
+      "DASHBOARD": "Tablero",
+      "ATTENDANCE": "Asistencia",
+      "MY-LEAVES": "Mis Ausencias",
+      "MYTEAM": "Mi Equipo",
+      "MYPROJECTS": "Mis Proyectos",
+      "MYTASKS": "Mis Tareas",
+      "SETTINGS": "Configuraciones",
+      "CHAT": "Chat"
+    },
+    "LEAVES": {
+      "TEXT": "Gestión de Ausencias",
+      "LIST": {
+        "LEAVE-REQUESTS": "Todas las Solicitudes de Ausencia",
+        "LEAVE-BALANCE": "Saldo de Ausencias",
+        "LEAVE-TYPES": "Tipos de Ausencia",
+        "LEAVE-SETTINGS": "Configuraciones de Ausencias"
+      }
+    },
+    "HOLIDAYS": {
+      "TEXT": "Días Festivos",
+      "LIST": {
+        "ALL-HOLIDAYS": "Todos los Días Festivos",
+        "ADD-HOLIDAY": "Agregar Día Festivo",
+        "EDIT-HOLIDAY": "Editar Día Festivo"
+      }
+    },
+    "ATTENDANCE": {
+      "TEXT": "Asistencia",
+      "LIST": {
+        "TODAY": "Asistencia de Hoy",
+        "EMPLOYEE": "Asistencia de Empleado",
+        "SHEET": "Hoja de Asistencia"
+      }
+    },
+    "CLIENT": {
+      "TEXT": "Cliente",
+      "DASHBOARD": "Tablero",
+      "PROJECTS": {
+        "TEXT": "Proyectos",
+        "LIST": {
+          "MY-PROJECTS": "Mis Proyectos",
+          "PROJECT-DETAILS": "Detalles del Proyecto"
+        }
+      },
+      "SUPPORTS": {
+        "TEXT": "Soporte",
+        "LIST": {
+          "TICKETS": "Tickets",
+          "TICKET-DETAILS": "Detalles del Ticket"
+        }
+      },
+      "BILLING": "Facturación",
+      "CHAT": "Chat",
+      "SETTINGS": "Configuraciones"
+    },
+    "APPS": {
+      "TEXT": "Aplicaciones"
+    },
+    "CALENDAR": {
+      "TEXT": "Calendario"
+    },
+    "TASK": {
+      "TEXT": "Tarea"
+    },
+    "CONTACTS": {
+      "TEXT": "Contactos"
+    }
+  }
+}

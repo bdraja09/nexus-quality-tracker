@@ -1,0 +1,44 @@
+<div class="nc-form-container">
+  <h2 class="form-title">Lever une non-conformité</h2>
+
+  <form (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Titre</mat-label>
+      <input matInput [(ngModel)]="title" name="title" required>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea matInput [(ngModel)]="description" name="description" rows="4" required></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Sévérité</mat-label>
+      <mat-select [(ngModel)]="severity" name="severity">
+        <mat-option value="low">Faible</mat-option>
+        <mat-option value="medium">Moyenne</mat-option>
+        <mat-option value="high">Élevée</mat-option>
+        <mat-option value="critical">Critique</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>ID du département</mat-label>
+      <input matInput [(ngModel)]="deptId" name="deptId" required>
+    </mat-form-field>
+
+    @if (error) {
+      <div class="alert alert-danger mb-3">{{ error }}</div>
+    }
+
+    <div style="text-align:center">
+      <button mat-flat-button color="accent" type="submit" class="submit-btn">
+        Lever la NC
+      </button>
+    </div>
+  </form>
+
+  @if (success) {
+    <div class="alert alert-success mt-3">NC créée avec succès : {{ success }}</div>
+  }
+</div>

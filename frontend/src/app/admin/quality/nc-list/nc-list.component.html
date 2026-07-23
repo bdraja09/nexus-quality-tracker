@@ -1,0 +1,76 @@
+<div class="nc-list-container">
+  <div class="header-row">
+    <h2>Non-conformités {{ userRole === 'Operator' ? '(les miennes et celles qui me sont assignées)' : '' }}</h2>
+    <button mat-flat-button color="accent" routerLink="/admin/quality/nc-form">+ Nouvelle NC</button>
+  </div>
+
+  @if (loading) { <p>Chargement...</p> }
+  @if (error) { <div class="alert alert-danger">{{ error }}</div> }
+
+  @if (!loading && !error) {
+    <div class="nc-cards">
+      @for (nc of ncs; track nc.id_nc) {
+        <mat-card class="nc-card">
+          <div class="nc-card-main">
+            <div class="nc-card-info">
+              <div class="nc-card-title-row">
+                <span class="ref-code">{{ nc.ref_code }}</span>
+                <strong>{{ nc.title }}</strong>
+              </div>
+              <div class="nc-card-badges">
+                <span class="badge" [style.background]="severityColor(nc.severity)">{{ nc.severity }}</span>
+                <span class="badge" [style.background]="stateColor(nc.current_state)">{{ nc.current_state }}</span>
+              </div>
+              <div class="nc-card-meta">
+                <span>Assigné à : {{ nc.assigned_to ? operatorName(nc.assigned_to) : '—' }}</span>
+                <span>Levée le : {{ nc.raised_at | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            </div>
+
+            <div class="nc-card-actions">
+              @for (action of availableActions(nc.current_state); track action) {
+                <button mat-stroked-button (click)="doTransition(nc, action)" class="action-btn">
+                  {{ actionLabel(action) }}
+                </button>
+              }
+              @if (canDelete) {
+                <button mat-icon-button color="warn" (click)="deleteNc(nc)" title="Supprimer">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (assigningNcId === nc.id_nc) {
+            <div class="assign-form-card">
+              <h4>Assigner « {{ nc.title }} »</h4>
+
+              <label>Opérateur *</label>
+              <select [(ngModel)]="selectedOperator" name="selectedOperator" class="assign-select">
+                <option value="" disabled>-- Choisir un opérateur --</option>
+                @for (op of operators; track op.id) {
+                  <option [value]="op.id">{{ op.name }} ({{ op.email }})</option>
+                }
+              </select>
+
+              <label>Date d'échéance (optionnel)</label>
+              <input type="date" [(ngModel)]="dueDate" name="dueDate" class="assign-input">
+
+              <label>Note (optionnel)</label>
+              <textarea [(ngModel)]="assignNotes" name="assignNotes" rows="2" class="assign-input"></textarea>
+
+              <div class="assign-actions">
+                <button mat-flat-button color="accent" (click)="confirmAssign(nc)">Confirmer</button>
+                <button mat-stroked-button (click)="toggleAssignForm(nc)">Annuler</button>
+              </div>
+            </div>
+          }
+        </mat-card>
+      }
+    </div>
+
+    @if (ncs.length === 0) {
+      <p class="empty-state">Aucune non-conformité pour le moment.</p>
+    }
+  }
+</div>

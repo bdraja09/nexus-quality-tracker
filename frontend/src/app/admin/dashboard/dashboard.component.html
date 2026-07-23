@@ -1,0 +1,61 @@
+<div class="dashboard-container">
+  <div class="header-row">
+    <h2>Tableau de bord Qualité</h2>
+    <button mat-flat-button color="accent" routerLink="/admin/quality/nc-form">+ Nouvelle NC</button>
+  </div>
+
+  @if (loading) {
+    <p>Chargement des indicateurs...</p>
+  }
+
+  @if (!loading && kpi) {
+    <div class="kpi-grid">
+      <mat-card class="kpi-card">
+        <span class="kpi-value">{{ kpi.open_nc }}</span>
+        <span class="kpi-label">NC ouvertes</span>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <span class="kpi-value">{{ kpi.avg_close_days ?? '—' }}</span>
+        <span class="kpi-label">Jours moyen de clôture (cible &lt; 5)</span>
+      </mat-card>
+
+      <mat-card class="kpi-card" [class.alert]="slaStatus === 'warn'">
+        <span class="kpi-value">{{ kpi.sla_breaches }}</span>
+        <span class="kpi-label">Alertes SLA (&gt; 5 jours)</span>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <span class="kpi-value">{{ kpi.total_nc }}</span>
+        <span class="kpi-label">Total des NC</span>
+      </mat-card>
+    </div>
+    @if (!loading && kpi) {
+  <div class="breakdown-row">
+    <mat-card class="breakdown-card">
+      <h4>Répartition par sévérité</h4>
+      @for (item of kpi.by_severity | keyvalue; track item.key) {
+        <div class="breakdown-item">
+          <span>{{ item.key }}</span>
+          <span class="count">{{ item.value }}</span>
+        </div>
+      }
+    </mat-card>
+
+    <mat-card class="breakdown-card">
+      <h4>Répartition par état</h4>
+      @for (item of kpi.by_state | keyvalue; track item.key) {
+        <div class="breakdown-item">
+          <span>{{ item.key }}</span>
+          <span class="count">{{ item.value }}</span>
+        </div>
+      }
+    </mat-card>
+  </div>
+}
+
+    <div class="quick-links">
+      <button mat-stroked-button routerLink="/admin/quality/nc-list">Voir toutes les NC</button>
+    </div>
+  }
+</div>

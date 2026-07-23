@@ -1,0 +1,159 @@
+{
+  "MENUITEMS": {
+    "MAIN": {
+      "TEXT": "Hauptmenü"
+    },
+    "DASHBOARD": {
+      "TEXT": "Dashboard",
+      "LIST": {
+        "DASHBOARD1": "Dashboard 1",
+        "DASHBOARD2": "Dashboard 2"
+      }
+    },
+    "PROJECTS": {
+      "TEXT": "Projekte",
+      "LIST": {
+        "ALL-PROJECTS": "Alle Projekte",
+        "ADD-PROJECT": "Projekt hinzufügen",
+        "ESTIMATES": "Schätzungen",
+        "PROJECT-DETAILS": "Projektdetails"
+      }
+    },
+    "EMPLOYEES": {
+      "TEXT": "Mitarbeiter",
+      "LIST": {
+        "ALL-EMPLOYEE": "Alle Mitarbeiter",
+        "ADD-EMPLOYEE": "Mitarbeiter hinzufügen",
+        "EDIT-EMPLOYEE": "Mitarbeiter bearbeiten",
+        "EMPLOYEE-SHIFT": "Mitarbeiterschicht",
+        "PROFILE": "Mitarbeiterprofil"
+      }
+    },
+    "CLIENTS": {
+      "TEXT": "Kunden",
+      "LIST": {
+        "ALL-CLIENTS": "Alle Kunden",
+        "ADD-CLIENT": "Kunde hinzufügen",
+        "EDIT-CLIENT": "Kunde bearbeiten"
+      }
+    },
+    "ACCOUNTS": {
+      "TEXT": "Konten",
+      "LIST": {
+        "CLIENT-PAYMENTS": "Kundenzahlungen",
+        "ADD-PAYMENT": "Zahlung hinzufügen",
+        "INVOICE": "Rechnung"
+      }
+    },
+    "PAYROLL": {
+      "TEXT": "Lohnabrechnung",
+      "LIST": {
+        "EMPLOYEE_SALARY": "Mitarbeitergehalt",
+        "PAYSLIP": "Gehaltsabrechnung"
+      }
+    },
+    "LEADERS": {
+      "TEXT": "Führungskräfte"
+    },
+    "JOBS": {
+      "TEXT": "Jobs",
+      "LIST": {
+        "JOBS_LIST": "Jobliste",
+        "RESUMES": "Lebensläufe",
+        "CANDIDATES": "Kandidaten",
+        "SHORTLIST_CANDIDATES": "Kandidaten in der engeren Wahl"
+      }
+    },
+    "DEPARTMENTS": {
+      "TEXT": "Abteilungen",
+      "LIST": {
+        "ALL-DEPARTMENT": "Alle Abteilungen",
+        "ADD-DEPARTMENT": "Abteilung hinzufügen",
+        "EDIT-DEPARTMENT": "Abteilung bearbeiten"
+      }
+    },
+    "TRAINING": {
+      "TEXT": "Schulung",
+      "LIST": {
+        "TRAINING-List": "Schulungsliste",
+        "TRAINERS": "Trainer",
+        "TRAINING-TYPE": "Schulungstyp"
+      }
+    },
+    "REPORTS": {
+      "TEXT": "Berichte",
+      "LIST": {
+        "LEAVE_REPORT": "Urlaubsbericht",
+        "EXPENSE_REPORT": "Spesenbericht"
+      }
+    },
+    "EMPLOYEE": {
+      "DASHBOARD": "Dashboard",
+      "ATTENDANCE": "Anwesenheit",
+      "MY-LEAVES": "Mein Urlaub",
+      "MYTEAM": "Mein Team",
+      "MYPROJECTS": "Meine Projekte",
+      "MYTASKS": "Meine Aufgaben",
+      "SETTINGS": "Einstellungen",
+      "CHAT": "Chat"
+    },
+    "LEAVES": {
+      "TEXT": "Urlaubsverwaltung",
+      "LIST": {
+        "LEAVE-REQUESTS": "Alle Urlaubsanträge",
+        "LEAVE-BALANCE": "Urlaubsanspruch",
+        "LEAVE-TYPES": "Urlaubsarten",
+        "LEAVE-SETTINGS": "Urlaubseinstellungen"
+      }
+    },
+    "HOLIDAYS": {
+      "TEXT": "Feiertage",
+      "LIST": {
+        "ALL-HOLIDAYS": "Alle Feiertage",
+        "ADD-HOLIDAY": "Feiertag hinzufügen",
+        "EDIT-HOLIDAY": "Feiertag bearbeiten"
+      }
+    },
+    "ATTENDANCE": {
+      "TEXT": "Anwesenheit",
+      "LIST": {
+        "TODAY": "Heutige Anwesenheit",
+        "EMPLOYEE": "Mitarbeiteranwesenheit",
+        "SHEET": "Anwesenheitsblatt"
+      }
+    },
+    "CLIENT": {
+      "TEXT": "Kunde",
+      "DASHBOARD": "Dashboard",
+      "PROJECTS": {
+        "TEXT": "Projekte",
+        "LIST": {
+          "MY-PROJECTS": "Meine Projekte",
+          "PROJECT-DETAILS": "Projektdetails"
+        }
+      },
+      "SUPPORTS": {
+        "TEXT": "Support",
+        "LIST": {
+          "TICKETS": "Tickets",
+          "TICKET-DETAILS": "Ticketdetails"
+        }
+      },
+      "BILLING": "Abrechnung",
+      "CHAT": "Chat",
+      "SETTINGS": "Einstellungen"
+    },
+    "APPS": {
+      "TEXT": "Apps"
+    },
+    "CALENDAR": {
+      "TEXT": "Kalender"
+    },
+    "TASK": {
+      "TEXT": "Aufgabe"
+    },
+    "CONTACTS": {
+      "TEXT": "Kontakte"
+    }
+  }
+}

@@ -1,0 +1,274 @@
+[
+  {
+    "trainer_id": 1,
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone_number": "123-456-7890",
+    "hire_date": "2020-03-15",
+    "specialization": "Cloud Computing",
+    "technical_skills": ["AWS", "Azure", "Terraform", "Docker", "Kubernetes"],
+    "certifications": [
+      "AWS Certified Solutions Architect",
+      "Microsoft Certified Azure Fundamentals"
+    ],
+    "training_experience": 5,
+    "industry_experience": 8,
+    "training_area": "Cloud Services",
+    "status": "Active",
+    "location": "New York",
+    "languages_spoken": ["English", "Spanish"],
+    "training_format": "Hybrid",
+    "img": "assets/images/user/user1.jpg"
+  },
+  {
+    "trainer_id": 2,
+    "name": "Alice Smith",
+    "email": "alice.smith@example.com",
+    "phone_number": "987-654-3210",
+    "hire_date": "2019-07-22",
+    "specialization": "Cybersecurity",
+    "technical_skills": [
+      "Firewall Management",
+      "Penetration Testing",
+      "Ethical Hacking",
+      "Linux Security"
+    ],
+    "certifications": ["Certified Ethical Hacker", "CompTIA Security+"],
+    "training_experience": 6,
+    "industry_experience": 10,
+    "training_area": "Cybersecurity",
+    "status": "Active",
+    "location": "San Francisco",
+    "languages_spoken": ["English"],
+    "training_format": "Online",
+    "img": "assets/images/user/user2.jpg"
+  },
+  {
+    "trainer_id": 3,
+    "name": "Bob Johnson",
+    "email": "bob.johnson@example.com",
+    "phone_number": "555-432-6789",
+    "hire_date": "2018-04-10",
+    "specialization": "Data Science",
+    "technical_skills": [
+      "Python",
+      "R",
+      "SQL",
+      "Machine Learning",
+      "TensorFlow"
+    ],
+    "certifications": [
+      "Certified Data Scientist",
+      "Google Cloud Professional Data Engineer"
+    ],
+    "training_experience": 7,
+    "industry_experience": 9,
+    "training_area": "Data Analytics",
+    "status": "Active",
+    "location": "Chicago",
+    "languages_spoken": ["English", "French"],
+    "training_format": "In-person",
+    "img": "assets/images/user/user3.jpg"
+  },
+  {
+    "trainer_id": 4,
+    "name": "Sara White",
+    "email": "sara.white@example.com",
+    "phone_number": "321-654-9870",
+    "hire_date": "2021-01-25",
+    "specialization": "DevOps",
+    "technical_skills": [
+      "Docker",
+      "Jenkins",
+      "Terraform",
+      "Kubernetes",
+      "CI/CD"
+    ],
+    "certifications": [
+      "Certified Kubernetes Administrator",
+      "Docker Certified Associate"
+    ],
+    "training_experience": 4,
+    "industry_experience": 6,
+    "training_area": "DevOps",
+    "status": "Active",
+    "location": "Los Angeles",
+    "languages_spoken": ["English"],
+    "training_format": "Hybrid",
+    "img": "assets/images/user/user4.jpg"
+  },
+  {
+    "trainer_id": 5,
+    "name": "Daniel Brown",
+    "email": "daniel.brown@example.com",
+    "phone_number": "222-333-4444",
+    "hire_date": "2017-08-30",
+    "specialization": "Artificial Intelligence",
+    "technical_skills": [
+      "Python",
+      "TensorFlow",
+      "Pytorch",
+      "Natural Language Processing"
+    ],
+    "certifications": ["Certified AI Engineer", "IBM Watson AI"],
+    "training_experience": 5,
+    "industry_experience": 9,
+    "training_area": "AI & Machine Learning",
+    "status": "Inactive",
+    "location": "Austin",
+    "languages_spoken": ["English", "German"],
+    "training_format": "Online",
+    "img": "assets/images/user/user5.jpg"
+  },
+  {
+    "trainer_id": 6,
+    "name": "Laura Green",
+    "email": "laura.green@example.com",
+    "phone_number": "555-123-7890",
+    "hire_date": "2018-02-20",
+    "specialization": "Mobile App Development",
+    "technical_skills": [
+      "React Native",
+      "Swift",
+      "Android Development",
+      "Java"
+    ],
+    "certifications": [
+      "Google Associate Android Developer",
+      "Apple Certified iOS Developer"
+    ],
+    "training_experience": 5,
+    "industry_experience": 7,
+    "training_area": "Mobile Development",
+    "status": "Active",
+    "location": "Boston",
+    "languages_spoken": ["English"],
+    "training_format": "In-person",
+    "img": "assets/images/user/user6.jpg"
+  },
+  {
+    "trainer_id": 7,
+    "name": "Michael Black",
+    "email": "michael.black@example.com",
+    "phone_number": "444-555-6666",
+    "hire_date": "2020-05-12",
+    "specialization": "Web Development",
+    "technical_skills": ["HTML", "CSS", "JavaScript", "React", "Node.js"],
+    "certifications": ["Certified Web Developer", "JavaScript Specialist"],
+    "training_experience": 3,
+    "industry_experience": 5,
+    "training_area": "Frontend & Backend Development",
+    "status": "Active",
+    "location": "Seattle",
+    "languages_spoken": ["English"],
+    "training_format": "Hybrid",
+    "img": "assets/images/user/user7.jpg"
+  },
+  {
+    "trainer_id": 8,
+    "name": "Sophia Martinez",
+    "email": "sophia.martinez@example.com",
+    "phone_number": "333-555-7777",
+    "hire_date": "2019-09-15",
+    "specialization": "Cloud Security",
+    "technical_skills": ["AWS Security", "Azure Security", "Cloud Governance"],
+    "certifications": [
+      "AWS Certified Security Specialty",
+      "Certified Cloud Security Professional (CCSP)"
+    ],
+    "training_experience": 4,
+    "industry_experience": 7,
+    "training_area": "Cloud Security",
+    "status": "Active",
+    "location": "Dallas",
+    "languages_spoken": ["English", "Spanish"],
+    "training_format": "Online",
+    "img": "assets/images/user/user8.jpg"
+  },
+  {
+    "trainer_id": 9,
+    "name": "James Harris",
+    "email": "james.harris@example.com",
+    "phone_number": "111-222-3333",
+    "hire_date": "2016-11-05",
+    "specialization": "Big Data",
+    "technical_skills": ["Hadoop", "Spark", "Kafka", "SQL", "NoSQL"],
+    "certifications": [
+      "Hadoop Certified Developer",
+      "Big Data Analytics Specialist"
+    ],
+    "training_experience": 8,
+    "industry_experience": 10,
+    "training_area": "Big Data & Analytics",
+    "status": "Inactive",
+    "location": "Chicago",
+    "languages_spoken": ["English", "Italian"],
+    "training_format": "In-person",
+    "img": "assets/images/user/user9.jpg"
+  },
+  {
+    "trainer_id": 10,
+    "name": "Ethan Davis",
+    "email": "ethan.davis@example.com",
+    "phone_number": "444-888-9999",
+    "hire_date": "2019-12-10",
+    "specialization": "Blockchain Development",
+    "technical_skills": [
+      "Ethereum",
+      "Smart Contracts",
+      "Solidity",
+      "Cryptography"
+    ],
+    "certifications": [
+      "Certified Blockchain Expert",
+      "Ethereum Developer Certified"
+    ],
+    "training_experience": 3,
+    "industry_experience": 6,
+    "training_area": "Blockchain",
+    "status": "Active",
+    "location": "San Francisco",
+    "languages_spoken": ["English"],
+    "training_format": "Hybrid",
+    "img": "assets/images/user/user10.jpg"
+  },
+  {
+    "trainer_id": 11,
+    "name": "Olivia Wilson",
+    "email": "olivia.wilson@example.com",
+    "phone_number": "555-432-1234",
+    "hire_date": "2020-06-01",
+    "specialization": "Network Engineering",
+    "technical_skills": ["Cisco Networking", "Routing", "Switching", "LAN/WAN"],
+    "certifications": ["CCNA", "CCNP"],
+    "training_experience": 4,
+    "industry_experience": 8,
+    "training_area": "Networking",
+    "status": "Active",
+    "location": "Miami",
+    "languages_spoken": ["English", "Portuguese"],
+    "training_format": "In-person",
+    "img": "assets/images/user/user7.jpg"
+  },
+  {
+    "trainer_id": 12,
+    "name": "William Clark",
+    "email": "william.clark@example.com",
+    "phone_number": "222-444-6666",
+    "hire_date": "2018-07-15",
+    "specialization": "Virtualization",
+    "technical_skills": ["VMware", "Hyper-V", "Virtual Machine Management"],
+    "certifications": [
+      "VMware Certified Professional",
+      "Microsoft Certified Virtualization Specialist"
+    ],
+    "training_experience": 6,
+    "industry_experience": 10,
+    "training_area": "Virtualization & Cloud Infrastructure",
+    "status": "Active",
+    "location": "New York",
+    "languages_spoken": ["English"],
+    "training_format": "Hybrid",
+    "img": "assets/images/user/user2.jpg"
+  }
+]
