@@ -106,25 +106,14 @@ export class SidebarComponent
           );
         });
 
-      if (userRole === Role.Admin) {
-        this.userType = Role.Admin;
-      } else if (userRole === Role.Client) {
-        this.userType = Role.Client;
-      } else if (userRole === Role.Employee) {
-        this.userType = Role.Employee;
-      } else {
-        this.userType = Role.Admin;
-      }
+      this.userType = userRole || Role.Admin;
     }
 
-    // this.sidebarItems = ROUTES.filter((sidebarItem) => sidebarItem);
     this.initLeftSidebar();
     this.bodyTag = this.document.body;
   }
   initLeftSidebar() {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const _this = this;
-    // Set menu height
     _this.setMenuHeight();
     _this.checkStatuForResize(true);
   }

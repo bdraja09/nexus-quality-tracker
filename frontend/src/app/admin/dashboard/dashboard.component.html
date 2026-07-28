@@ -1,61 +1,125 @@
-<div class="dashboard-container">
-  <div class="header-row">
-    <h2>Tableau de bord Qualité</h2>
-    <button mat-flat-button color="accent" routerLink="/admin/quality/nc-form">+ Nouvelle NC</button>
+<div class="qc-page dashboard-page">
+
+  <div class="dash-header">
+    <div>
+      <h2 class="qc-title">Non-Conformance Dashboard</h2>
+      <span class="qc-eyebrow">Quality Management · ISO 9001:2015 § 10.2</span>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button class="refresh-btn" (click)="refresh()" [disabled]="loading">
+        <i-feather name="refresh-cw" [class.spin]="loading"></i-feather>
+      </button>
+      <a routerLink="/admin/quality/nc-form" mat-flat-button color="accent" class="new-nc-btn">
+        <i-feather name="plus" class="me-1"></i-feather>
+        Create NCR
+      </a>
+    </div>
+  </div>
+  <!-- @if (lastUpdated) {
+    <span class="last-updated">Updated {{ lastUpdated | date:'HH:mm:ss' }}</span>
+  } -->
+
+  <!-- KPI row (QNC-07) -->
+  <div class="kpi-row">
+    <div class="qc-card kpi-card">
+      <span class="kpi-label">Total NCRs</span>
+      <span class="kpi-value">{{ kpi?.total_nc ?? '—' }}</span>
+    </div>
+    <div class="qc-card kpi-card">
+      <span class="kpi-label">Open</span>
+      <span class="kpi-value" style="color: var(--qc-amber, #d97706);">{{ kpi?.open_nc ?? '—' }}</span>
+    </div>
+    <div class="qc-card kpi-card">
+      <span class="kpi-label">Closed</span>
+      <span class="kpi-value" style="color: var(--qc-green, #16a34a);">{{ kpi?.closed_nc ?? '—' }}</span>
+    </div>
+    <div class="qc-card kpi-card" [ngClass]="'rag-' + avgCloseStatus">
+      <span class="kpi-label">Avg. Resolution Time</span>
+      <span class="kpi-value">
+        {{ kpi?.avg_resolution_days ?? '—' }}<span class="kpi-unit">d</span>
+      </span>
+      <span class="kpi-target">
+        <span class="rag-dot" [ngClass]="'rag-' + avgCloseStatus"></span>
+        {{ avgCloseStatusLabel }} · ISO 10.2 target &lt; 5 d
+      </span>
+    </div>
   </div>
 
-  @if (loading) {
-    <p>Chargement des indicateurs...</p>
-  }
-
-  @if (!loading && kpi) {
-    <div class="kpi-grid">
-      <mat-card class="kpi-card">
-        <span class="kpi-value">{{ kpi.open_nc }}</span>
-        <span class="kpi-label">NC ouvertes</span>
-      </mat-card>
-
-      <mat-card class="kpi-card">
-        <span class="kpi-value">{{ kpi.avg_close_days ?? '—' }}</span>
-        <span class="kpi-label">Jours moyen de clôture (cible &lt; 5)</span>
-      </mat-card>
-
-      <mat-card class="kpi-card" [class.alert]="slaStatus === 'warn'">
-        <span class="kpi-value">{{ kpi.sla_breaches }}</span>
-        <span class="kpi-label">Alertes SLA (&gt; 5 jours)</span>
-      </mat-card>
-
-      <mat-card class="kpi-card">
-        <span class="kpi-value">{{ kpi.total_nc }}</span>
-        <span class="kpi-label">Total des NC</span>
-      </mat-card>
+  <!-- SLA Watch (QNC-08 — dashboard echo of the header alert bell) -->
+  <div class="qc-card sla-watch" [ngClass]="{
+      'sla-breached': slaBreached > 0,
+      'sla-warning': slaBreached === 0 && slaAtRisk > 0,
+      'sla-clear': slaBreached === 0 && slaAtRisk === 0
+    }">
+    <i-feather [name]="slaBreached > 0 ? 'alert-octagon' : (slaAtRisk > 0 ? 'alert-triangle' : 'check-circle')"
+               class="sla-icon"></i-feather>
+    <div class="sla-text">
+      @if (slaBreached > 0) {
+        <strong>{{ slaBreached }}</strong> non-conformance{{ slaBreached > 1 ? 's have' : ' has' }} breached the 5-day SLA.
+      } @else if (slaAtRisk > 0) {
+        <strong>{{ slaAtRisk }}</strong> non-conformance{{ slaAtRisk > 1 ? 's are' : ' is' }} approaching the 5-day SLA.
+      } @else {
+        All open non-conformances are within the ISO 10.2 SLA.
+      }
     </div>
-    @if (!loading && kpi) {
-  <div class="breakdown-row">
-    <mat-card class="breakdown-card">
-      <h4>Répartition par sévérité</h4>
-      @for (item of kpi.by_severity | keyvalue; track item.key) {
-        <div class="breakdown-item">
-          <span>{{ item.key }}</span>
-          <span class="count">{{ item.value }}</span>
-        </div>
-      }
-    </mat-card>
-
-    <mat-card class="breakdown-card">
-      <h4>Répartition par état</h4>
-      @for (item of kpi.by_state | keyvalue; track item.key) {
-        <div class="breakdown-item">
-          <span>{{ item.key }}</span>
-          <span class="count">{{ item.value }}</span>
-        </div>
-      }
-    </mat-card>
+    <a routerLink="/admin/quality/nc" [queryParams]="{ filter: 'sla' }" class="sla-link">Review</a>
   </div>
-}
 
-    <div class="quick-links">
-      <button mat-stroked-button routerLink="/admin/quality/nc-list">Voir toutes les NC</button>
+  <!-- NC lifecycle distribution — mirrors the state machine in §4.3 -->
+  <div class="qc-card lifecycle-card">
+    <div class="card-head">
+      <h3 class="card-title">NC Lifecycle</h3>
+      <span class="qc-eyebrow">Current distribution across the state machine</span>
     </div>
-  }
+    <div class="lifecycle-track">
+      @for (stage of lifecycleStages; track stage.key; let i = $index) {
+        <div class="lifecycle-stage" [class.terminal]="stage.terminal">
+          <div class="stage-dot" [style.background]="stage.color">{{ i + 1 }}</div>
+          <span class="stage-count">{{ stage.count }}</span>
+          <span class="stage-label">{{ stage.label }}</span>
+        </div>
+        @if (!stage.terminal && i < lifecycleStages.length - 1) {
+          <div class="stage-connector"></div>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+    <div class="qc-card chart-card">
+      <div class="card-head">
+        <h3 class="card-title">NCR Trend Analysis</h3>
+        <span class="qc-eyebrow">Created, closed and average lead time — rolling 12 months</span>
+      </div>
+      <div class="chart-container">
+        <canvas baseChart [data]="trendChartData" [options]="trendChartOptions" type="bar">
+        </canvas>
+      </div>
+    </div>
+
+    <div class="side-col">
+      <div class="qc-card">
+        <div class="card-head">
+          <h3 class="card-title">Severity Distribution</h3>
+          <span class="qc-eyebrow">QNC-11 · Classification breakdown</span>
+        </div>
+        <div class="chart-container donut-container">
+          <canvas baseChart [data]="donutChartData" [options]="donutChartOptions" type="doughnut">
+          </canvas>
+        </div>
+      </div>
+
+      <a routerLink="/admin/quality/nc-list" class="qc-card download-card">
+        <div class="icon-wrap">
+          <i-feather name="clock"></i-feather>
+        </div>
+        <div>
+          <h4>Non-Conformance Register</h4>
+          <p>Full event history, filters, and audit-ready export.</p>
+        </div>
+        <i-feather name="arrow-right" class="chevron"></i-feather>
+      </a>
+    </div>
+  </div>
 </div>

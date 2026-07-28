@@ -9,16 +9,19 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { ConfigService } from '@config';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
-import { LanguageService, InConfiguration, AuthService } from '@core';
+import { LanguageService, InConfiguration, AuthService, NcService } from '@core';
 import { NgScrollbar } from 'ngx-scrollbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { FeatherIconsComponent } from '@shared/components/feather-icons/feather-icons.component';
 import { MatButtonModule } from '@angular/material/button';
+import { HttpClient } from '@angular/common/http';
 
-interface Notifications {
+interface SlaNotification {
+  id: number;
+  nc_id: string;
+  type: 'BREACHED' | 'WARNING';
   message: string;
   time: string;
-  icon: string;
   color: string;
   status: string;
 }
@@ -41,7 +44,8 @@ export class HeaderComponent
   implements OnInit
 {
   public config!: InConfiguration;
-  userImg?: string;
+  userName = '';
+  userInitials = '';
   homePage?: string;
   isNavbarCollapsed = true;
   flagvalue: string | string[] | undefined;
@@ -52,6 +56,14 @@ export class HeaderComponent
   docElement?: HTMLElement;
   isFullScreen = false;
 
+  // ─── SLA notifications ───
+  slaNotifications: SlaNotification[] = [];
+  unreadCount = 0;
+
+  get hasBreachedNotification(): boolean {
+    return this.slaNotifications.some(n => n.type === 'BREACHED');
+  }
+
   constructor(
     @Inject(DOCUMENT) private document: Document,
     private renderer: Renderer2,
@@ -59,70 +71,28 @@ export class HeaderComponent
     private configService: ConfigService,
     private authService: AuthService,
     private router: Router,
-    public languageService: LanguageService
+    public languageService: LanguageService,
+    private http: HttpClient
   ) {
     super();
   }
+
   listLang = [
     { text: 'English', flag: 'assets/images/flags/us.jpg', lang: 'en' },
     { text: 'Spanish', flag: 'assets/images/flags/spain.jpg', lang: 'es' },
     { text: 'German', flag: 'assets/images/flags/germany.jpg', lang: 'de' },
   ];
-  notifications: Notifications[] = [
-    {
-      message: 'Please check your mail',
-      time: '14 mins ago',
-      icon: 'mail',
-      color: 'nfc-green',
-      status: 'msg-unread',
-    },
-    {
-      message: 'New Employee Added..',
-      time: '22 mins ago',
-      icon: 'person_add',
-      color: 'nfc-blue',
-      status: 'msg-read',
-    },
-    {
-      message: 'Your leave is approved!! ',
-      time: '3 hours ago',
-      icon: 'event_available',
-      color: 'nfc-orange',
-      status: 'msg-read',
-    },
-    {
-      message: 'Lets break for lunch...',
-      time: '5 hours ago',
-      icon: 'lunch_dining',
-      color: 'nfc-blue',
-      status: 'msg-read',
-    },
-    {
-      message: 'Employee report generated',
-      time: '14 mins ago',
-      icon: 'description',
-      color: 'nfc-green',
-      status: 'msg-read',
-    },
-    {
-      message: 'Please check your mail',
-      time: '22 mins ago',
-      icon: 'mail',
-      color: 'nfc-red',
-      status: 'msg-read',
-    },
-    {
-      message: 'Salary credited...',
-      time: '3 hours ago',
-      icon: 'paid',
-      color: 'nfc-purple',
-      status: 'msg-read',
-    },
-  ];
+
   ngOnInit() {
     this.config = this.configService.configData;
-    const userRole = this.authService.currentUserValue.role;
-    this.userImg = this.authService.currentUserValue.img;
+    const user = this.authService.currentUserValue;
+    const userRole = user?.role;
+
+    this.userName = user ? `${user.first_name} ${user.last_name}` : 'User';
+    this.userInitials = user
+      ? `${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}`.toUpperCase()
+      : '?';
+
     this.docElement = document.documentElement;
 
     if (userRole === 'Admin') {
@@ -131,6 +101,8 @@ export class HeaderComponent
       this.homePage = 'client/dashboard';
     } else if (userRole === 'Employee') {
       this.homePage = 'employee/dashboard';
+    } else if (userRole === 'Manager' || userRole === 'Operator' || userRole === 'Auditor') {
+      this.homePage = 'admin/quality/dashboard';
     } else {
       this.homePage = 'admin/dashboard/main';
     }
@@ -145,6 +117,57 @@ export class HeaderComponent
     } else {
       this.flagvalue = val.map((element) => element.flag);
     }
+
+    this.loadSlaNotifications();
+    setInterval(() => this.loadSlaNotifications(), 2 * 60 * 1000);
+  }
+
+  loadSlaNotifications() {
+    this.http.get<any>('/sla/alerts').subscribe({
+      next: (data) => {
+        const alerts = data.alerts || [];
+        this.unreadCount = alerts.length;
+        this.slaNotifications = alerts.map((a: any) => ({
+          id: a.id,
+          nc_id: a.nc_id,
+          type: a.type,
+          message: a.type === 'BREACHED'
+            ? `NC ${a.nc_id} — SLA breached (>5 days)`
+            : `NC ${a.nc_id} — Due within 24h`,
+          time: this.timeAgo(new Date(a.created_at)),
+          color: a.type === 'BREACHED' ? 'nfc-red' : 'nfc-orange',
+          status: 'msg-unread'
+        }));
+      },
+      error: (err) => {
+        console.error('Error loading SLA alerts', err);
+        this.slaNotifications = [];
+        this.unreadCount = 0;
+      }
+    });
+  }
+
+  private timeAgo(date: Date): string {
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    return `${Math.floor(diff / 86400)}d`;
+  }
+
+  markAllAsRead() {
+    this.slaNotifications = this.slaNotifications.map(n => ({
+      ...n,
+      status: 'msg-read'
+    }));
+    this.unreadCount = 0;
+  }
+
+  onNotificationClick(ncId: string) {
+    this.router.navigate(['/admin/quality/nc-list'], {
+      queryParams: { highlight: ncId }
+    });
   }
 
   callFullscreen() {
@@ -157,22 +180,23 @@ export class HeaderComponent
     }
     this.isFullScreen = !this.isFullScreen;
   }
+
   setLanguage(text: string, lang: string, flag: string) {
     this.countryName = text;
     this.flagvalue = flag;
     this.langStoreValue = lang;
     this.languageService.setLanguage(lang);
   }
+
   mobileMenuSidebarOpen(event: Event, className: string) {
-    const hasClass = (event.target as HTMLInputElement).classList.contains(
-      className
-    );
+    const hasClass = (event.target as HTMLInputElement).classList.contains(className);
     if (hasClass) {
       this.renderer.removeClass(this.document.body, className);
     } else {
       this.renderer.addClass(this.document.body, className);
     }
   }
+
   callSidemenuCollapse() {
     const hasClass = this.document.body.classList.contains('side-closed');
     if (hasClass) {
@@ -185,6 +209,7 @@ export class HeaderComponent
       localStorage.setItem('collapsed_menu', 'true');
     }
   }
+
   logout() {
     this.subs.sink = this.authService.logout().subscribe((res) => {
       if (!res.success) {

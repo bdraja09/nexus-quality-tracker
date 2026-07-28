@@ -1,37 +1,58 @@
 <div>
   <!-- Left Sidebar -->
   <aside id="leftsidebar" class="sidebar" (mouseenter)="mouseHover()" (mouseleave)="mouseOut()">
+    <!-- Sidebar Brand -->
+    <div class="sidebar-brand">
+      <div class="sidebar-logo-wrap">
+        <img src="assets/images/logo.png" class="sidebar-logo-img" alt="KUBER" />
+      </div>
+      <div class="sidebar-brand-text">
+        <span class="sidebar-brand-name">KUBER</span>
+      </div>
+    </div>
+
     <!-- Menu -->
     <div class="menu">
       <ng-scrollbar [style.height]="listMaxHeight + 'px'" visibility="hover">
         <ul class="list">
+          <!-- User Panel -->
           <li class="sidebar-user-panel">
             <div class="user-panel">
-              <div class=" image">
-                <img src={{userImg}} class="img-circle user-img-circle" alt="User Image" />
+              <div class="image">
+                <div class="user-avatar-initials">
+                  {{ userFullName ? userFullName[0] : 'U' }}
+                </div>
               </div>
             </div>
             <div class="profile-usertitle">
-              <div class="sidebar-userpic-name">{{userFullName}} </div>
-              <div class="profile-usertitle-job ">{{userType}} </div>
+              <div class="sidebar-userpic-name">{{ userFullName }}</div>
+              <div class="profile-usertitle-job">
+                <span class="role-badge"
+                  [class.badge-manager]="userType === 'Manager'"
+                  [class.badge-operator]="userType === 'Operator'"
+                  [class.badge-auditor]="userType === 'Auditor'"
+                  [class.badge-admin]="userType === 'Admin'">
+                  {{ userType }}
+                </span>
+              </div>
             </div>
           </li>
+
           <!-- Top Most level menu -->
           @for (sidebarItem of sidebarItems; track sidebarItem) {
             <li
               [routerLinkActive]="sidebarItem.submenu.length !== 0 ? 'active' : 'active-top'">
               @if (sidebarItem.groupTitle === true) {
-                <div class="header">{{sidebarItem.title | translate}}</div>
+                <div class="header">{{ sidebarItem.title | translate }}</div>
               }
-              @if (!sidebarItem.groupTitle;) {
+              @if (!sidebarItem.groupTitle) {
                 <a [routerLink]="sidebarItem.class === '' ? [sidebarItem.path] : null"
                   [ngClass]="[sidebarItem.class]" (click)="callToggleMenu($event, sidebarItem.submenu.length)"
                   class="menu-top">
                   <i-feather [name]="sidebarItem.icon" class="sidebarIcon"></i-feather>
-                  <span class="hide-menu">{{sidebarItem.title | translate}}
-                  </span>
-                  @if (sidebarItem.badge !== '' ) {
-                    <span [ngClass]="[sidebarItem.badgeClass]">{{sidebarItem.badge}}</span>
+                  <span class="hide-menu">{{ sidebarItem.title | translate }}</span>
+                  @if (sidebarItem.badge !== '') {
+                    <span [ngClass]="[sidebarItem.badgeClass]">{{ sidebarItem.badge }}</span>
                   }
                 </a>
               }
@@ -43,7 +64,7 @@
                       [routerLinkActive]="sidebarSubItem1.submenu.length > 0 ? '' : 'active'">
                       <a [routerLink]="sidebarSubItem1.submenu.length > 0 ? null : [sidebarSubItem1.path]"
                         (click)="callToggleMenu($event,sidebarSubItem1.submenu.length)" [ngClass]="[sidebarSubItem1.class]">
-                        {{sidebarSubItem1.title | translate}}
+                        {{ sidebarSubItem1.title | translate }}
                       </a>
                       <!-- Second level menu -->
                       @if (sidebarSubItem1.submenu.length > 0) {
@@ -54,7 +75,7 @@
                               <a [routerLink]="sidebarSubItem2.submenu.length > 0 ? null : [sidebarSubItem2.path]"
                                 (click)="callToggleMenu($event,sidebarSubItem2.submenu.length)"
                                 [ngClass]="[sidebarSubItem2.class]">
-                                {{sidebarSubItem2.title | translate}}
+                                {{ sidebarSubItem2.title | translate }}
                               </a>
                               <!-- Third level menu -->
                               @if (sidebarSubItem2.submenu.length > 0) {
@@ -65,7 +86,7 @@
                                       <a [routerLink]="sidebarSubItem3.submenu.length > 0 ? null : [sidebarSubItem3.path]"
                                         (click)="callToggleMenu($event,sidebarSubItem3.submenu.length)"
                                         [ngClass]="[sidebarSubItem3.class]">
-                                        {{sidebarSubItem3.title | translate}}
+                                        {{ sidebarSubItem3.title | translate }}
                                       </a>
                                     </li>
                                   }
@@ -81,11 +102,12 @@
               }
             </li>
           }
-          <li>
-            <a class="" (click)="logout()" class="menu-top">
+
+          <!-- Logout -->
+          <li class="logout-item">
+            <a (click)="logout()" class="menu-top logout-link">
               <i-feather name="log-out" class="sidebarIcon"></i-feather>
-              <span class="hide-menu">Logout
-              </span>
+              <span class="hide-menu">Logout</span>
             </a>
           </li>
         </ul>

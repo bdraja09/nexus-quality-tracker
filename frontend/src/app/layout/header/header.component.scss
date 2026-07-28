@@ -1,1 +1,258 @@
+.user_profile {
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
 
+    span:first-child {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: inherit;
+    }
+  }
+
+  .user_avatar_initials {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    // Same blue gradient as the sidebar avatar, for a consistent brand accent
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #ffffff;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+}
+
+// NEXUS N3 navbar brand
+.navbar-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+  border-radius: 6px;
+}
+
+.logo-n3 {
+  color: #00d4aa;
+  font-weight: 800;
+  font-style: normal;
+}
+
+.logo-name {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: 2px;
+}
+
+// ─── SLA notification badge ───
+.nav-notification-icons {
+  position: relative;
+
+  &.has-breach::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dc2626;
+    box-shadow: 0 0 0 rgba(220, 38, 38, 0.5);
+    animation: sla-pulse 2s infinite;
+  }
+}
+
+@keyframes sla-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.label-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+
+  &.bg-orange {
+    background: #d97706 !important;
+  }
+
+  &.bg-red {
+    background: #dc2626 !important;
+  }
+}
+
+// ─── Dropdown header ───
+.nfc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e4e7ec;
+
+  h5 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #101828;
+  }
+}
+
+// ─── Notification rows ───
+.nfc-dropdown .menu button[mat-menu-item] {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  height: auto;
+  padding: 12px 16px;
+  border-left: 3px solid transparent;
+  line-height: 1.4;
+  white-space: normal;
+  position: relative;
+
+  &.nfc-red { border-left-color: #dc2626; }
+  &.nfc-orange { border-left-color: #d97706; }
+
+  &.msg-read {
+    opacity: 0.6;
+
+    .menu-title { font-weight: 400; }
+  }
+
+  &.msg-unread .menu-title {
+    font-weight: 600;
+  }
+
+  .unread-dot {
+    position: absolute;
+    top: 15px;
+    left: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+
+    &.nfc-red { background: #dc2626; }
+    &.nfc-orange { background: #d97706; }
+  }
+}
+
+.menu-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12.5px;
+  color: #101828;
+  display: block;
+}
+
+.menu-desc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #667085;
+
+  .time-icon {
+    width: 11px;
+    height: 11px;
+  }
+}
+
+// ─── Empty state ───
+.nfc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+
+  .nfc-empty-icon {
+    width: 40px;
+    height: 40px;
+    color: #16a34a;
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #101828;
+    margin: 0;
+  }
+
+  .nfc-empty-sub {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: #667085;
+    margin-top: 4px;
+  }
+}
+
+// ─── Icon colors inside the dropdown ───
+.nfc-type-icon {
+  width: 16px;
+  height: 16px;
+  padding: 6px;
+  border-radius: 8px;
+
+  &.nfc-red {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+  }
+
+  &.nfc-orange {
+    color: #d97706;
+    background: rgba(217, 119, 6, 0.1);
+  }
+}
+
+// ─── Mark as read / footer links ───
+.nfc-mark-as-read {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.nfc-footer {
+  border-top: 1px solid #e4e7ec;
+  padding: 10px 16px;
+  text-align: center;
+
+  .nfc-read-all {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #2563eb;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

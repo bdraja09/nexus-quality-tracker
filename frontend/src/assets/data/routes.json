@@ -2,6 +2,54 @@
   "routes": [
     {
       "path": "",
+      "title": "NEXUS N3 — Qualité",
+      "iconType": "",
+      "icon": "",
+      "class": "",
+      "groupTitle": true,
+      "badge": "",
+      "badgeClass": "",
+      "role": ["All"],
+      "submenu": []
+    },
+    {
+      "path": "/admin/quality/dashboard",
+      "title": "Tableau de bord",
+      "iconType": "feather",
+      "icon": "activity",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": ["All", "Manager", "Operator", "Auditor"],
+      "submenu": []
+    },
+    {
+      "path": "/admin/quality/nc-form",
+      "title": "Nouvelle NC",
+      "iconType": "feather",
+      "icon": "plus-circle",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": ["All", "Manager", "Operator"],
+      "submenu": []
+    },
+    {
+      "path": "/admin/quality/nc-list",
+      "title": "Liste des NC",
+      "iconType": "feather",
+      "icon": "list",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": ["All", "Manager", "Operator", "Auditor"],
+      "submenu": []
+    },
+    {
+      "path": "",
       "title": "MENUITEMS.MAIN.TEXT",
       "iconType": "",
       "icon": "",

@@ -1,44 +1,167 @@
-<div class="nc-form-container">
-  <h2 class="form-title">Lever une non-conformité</h2>
+<div class="nc-form-page">
 
-  <form (ngSubmit)="onSubmit()">
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Titre</mat-label>
-      <input matInput [(ngModel)]="title" name="title" required>
-    </mat-form-field>
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/admin/quality/dashboard">Quality</a>
+    <i-feather name="chevron-right" class="crumb-sep"></i-feather>
+    <a routerLink="/admin/quality/nc-list">Non-Conformances</a>
+    <i-feather name="chevron-right" class="crumb-sep"></i-feather>
+    <span class="crumb-current">New</span>
+  </nav>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Description</mat-label>
-      <textarea matInput [(ngModel)]="description" name="description" rows="4" required></textarea>
-    </mat-form-field>
+  <div class="page-head">
+    <h1 class="page-title">Raise a Non-Conformity</h1>
+    <p class="page-subtitle">This creates a permanent, audit-logged record under ISO 9001:2015 §10.2.</p>
+  </div>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Sévérité</mat-label>
-      <mat-select [(ngModel)]="severity" name="severity">
-        <mat-option value="low">Faible</mat-option>
-        <mat-option value="medium">Moyenne</mat-option>
-        <mat-option value="high">Élevée</mat-option>
-        <mat-option value="critical">Critique</mat-option>
-      </mat-select>
-    </mat-form-field>
+  <form (ngSubmit)="onSubmit()" #ncForm="ngForm" class="form-layout">
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>ID du département</mat-label>
-      <input matInput [(ngModel)]="deptId" name="deptId" required>
-    </mat-form-field>
+    <!-- LEFT: content -->
+    <section class="panel details-panel">
+      <span class="panel-label">What happened</span>
 
-    @if (error) {
-      <div class="alert alert-danger mb-3">{{ error }}</div>
-    }
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Title *</mat-label>
+        <input matInput [(ngModel)]="title" name="title" required maxlength="120"
+          placeholder="e.g. Missing torque check on line 3">
+        <mat-hint align="end">{{ title.length }}/{{ titleMaxLength }}</mat-hint>
+      </mat-form-field>
 
-    <div style="text-align:center">
-      <button mat-flat-button color="accent" type="submit" class="submit-btn">
-        Lever la NC
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Description *</mat-label>
+        <textarea matInput [(ngModel)]="description" name="description" rows="6" required
+          placeholder="Describe what was observed, where, and when. Be specific — this becomes part of the audit trail."></textarea>
+      </mat-form-field>
+
+      <!-- Evidence attachments — QNC-01 -->
+      <div class="field-block evidence-block">
+        <div class="field-block-header">
+          <span class="field-block-label">Evidence <span class="optional-tag">optional</span></span>
+          <span class="field-block-hint">
+            Photos, PDFs, or documents supporting this record — up to {{ maxFiles }} files, {{ maxFileSizeMb }} MB each.
+          </span>
+        </div>
+
+        <div
+          class="dropzone"
+          [class.dragging]="isDraggingOver"
+          (click)="fileInput.click()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave()"
+          (drop)="onDrop($event)">
+          <i-feather name="upload-cloud" class="dropzone-icon"></i-feather>
+          <span class="dropzone-text">Drag files here, or <strong>browse</strong></span>
+          <input #fileInput type="file" multiple [accept]="acceptedTypes" (change)="onFilesPicked($event)" hidden>
+        </div>
+
+        @if (fileError) {
+          <div class="form-banner banner-error inline-banner">
+            <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+            <span>{{ fileError }}</span>
+          </div>
+        }
+
+        @if (selectedFiles.length > 0) {
+          <ul class="file-list">
+            @for (file of selectedFiles; track file.name; let i = $index) {
+              <li class="file-item">
+                <i-feather [name]="fileIcon(file)" class="file-icon"></i-feather>
+                <span class="file-name">{{ file.name }}</span>
+                <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                <button type="button" class="file-remove" (click)="removeFile(i)" aria-label="Remove file">
+                  <i-feather name="x"></i-feather>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </section>
+
+    <!-- RIGHT: classification + preview + action -->
+    <aside class="panel meta-panel">
+      <span class="panel-label">Classify</span>
+
+      <div class="severity-list" role="radiogroup" aria-label="Severity">
+        @for (opt of severityOptions; track opt.value) {
+          <button
+            type="button"
+            class="severity-row"
+            [ngClass]="'sev-' + opt.value"
+            [class.selected]="severity === opt.value"
+            role="radio"
+            [attr.aria-checked]="severity === opt.value"
+            (click)="selectSeverity(opt.value)">
+            <span class="row-indicator"></span>
+            <span class="row-text">
+              <span class="row-label">{{ opt.label }}</span>
+              <span class="row-desc">{{ opt.description }}</span>
+            </span>
+            @if (severity === opt.value) {
+              <i-feather name="check" class="row-check"></i-feather>
+            }
+          </button>
+        }
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width dept-field">
+        <mat-label>Department ID *</mat-label>
+        <input matInput [(ngModel)]="deptId" name="deptId" required placeholder="e.g. QA-04">
+        <mat-hint>Matches the department code from the Admin module</mat-hint>
+      </mat-form-field>
+
+      <div class="record-preview" [ngClass]="'sev-' + severity">
+        <span class="preview-label">Record preview</span>
+        <div class="preview-row">
+          <span class="preview-key">Reference</span>
+          <span class="preview-val mono">
+            {{ success ? success : (submitting ? 'Generating…' : 'Pending') }}
+          </span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">Severity</span>
+          <span class="preview-val">{{ selectedSeverityOption.label }}</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">Department</span>
+          <span class="preview-val mono">{{ deptId || '—' }}</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-key">Attachments</span>
+          <span class="preview-val">{{ selectedFiles.length || '—' }}</span>
+        </div>
+        <div class="preview-status" [class.status-created]="success">
+          {{ success ? 'Created' : 'Draft' }}
+        </div>
+      </div>
+
+      @if (error) {
+        <div class="form-banner banner-error">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ error }}</span>
+        </div>
+      }
+      @if (success) {
+        <div class="form-banner banner-success">
+          <i-feather name="check-circle" class="banner-icon"></i-feather>
+          <span>Redirecting to the register…</span>
+        </div>
+      }
+
+      <button
+        mat-flat-button
+        color="accent"
+        type="submit"
+        class="submit-btn"
+        [disabled]="ncForm.invalid || submitting">
+        @if (submitting) {
+          <i-feather name="loader" class="btn-spinner"></i-feather>
+        } @else {
+          <i-feather name="arrow-right" class="btn-arrow"></i-feather>
+        }
+        {{ submitting ? 'Sending…' : 'Raise NC' }}
       </button>
-    </div>
-  </form>
+      <span class="required-note">* Required field</span>
+    </aside>
 
-  @if (success) {
-    <div class="alert alert-success mt-3">NC créée avec succès : {{ success }}</div>
-  }
+  </form>
 </div>

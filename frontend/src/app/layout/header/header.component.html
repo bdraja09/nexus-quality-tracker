@@ -4,9 +4,9 @@
       <a href="#" onClick="return false;" class="navbar-toggle collapsed"
         (click)="isNavbarCollapsed = !isNavbarCollapsed" aria-expanded="false"></a>
       <a href="#" onClick="return false;" class="bars" (click)="mobileMenuSidebarOpen($event,'overlay-open')"></a>
-      <a class="navbar-brand" routerLink={{homePage}}>
-        <img src="assets/images/logo.png" alt="" />
-        <span class="logo-name">Kuber</span>
+      <a class="navbar-brand" routerLink="/admin/quality/dashboard">
+        <img src="assets/images/logo.png" alt="KUBER" class="navbar-logo-img" />
+        <span class="logo-name">KUBER</span>
       </a>
     </div>
     <div class="collapse navbar-collapse" [ngClass]="isNavbarCollapsed ? '' : 'show'">
@@ -45,31 +45,52 @@
             }
           </mat-menu>
         </li>
-        <!-- #START# Notifications-->
+        <!-- #START# SLA Notifications -->
         <li class="nav-item btnNotification" ngbDropdown>
-          <button mat-icon-button [matMenuTriggerFor]="notificationMenu" class="nav-notification-icons">
+          <button mat-icon-button [matMenuTriggerFor]="notificationMenu" class="nav-notification-icons"
+            [class.has-breach]="hasBreachedNotification">
             <app-feather-icons [icon]="'bell'" [class]="'header-icon'"></app-feather-icons>
-            <span class="label-count bg-orange"></span>
+            @if (unreadCount > 0) {
+              <span class="label-count" [class.bg-orange]="!hasBreachedNotification" [class.bg-red]="hasBreachedNotification">
+                {{ unreadCount > 9 ? '9+' : unreadCount }}
+              </span>
+            }
           </button>
           <mat-menu #notificationMenu="matMenu" class="nfc-menu">
             <div class="nfc-header">
-              <h5 class="mb-0">Notitications</h5>
-              <a class="nfc-mark-as-read">Mark all as read</a>
+              <h5 class="mb-0">SLA Alerts</h5>
+              @if (unreadCount > 0) {
+                <a class="nfc-mark-as-read" (click)="markAllAsRead()">Mark all as read</a>
+              }
             </div>
             <div class="nfc-dropdown">
               <ng-scrollbar style="height: 350px" visibility="hover">
                 <div class="noti-list header-menu">
                   <div class="menu">
-                    @for (notification of notifications; track notification) {
-                    <button mat-menu-item onClick="return false;" [ngClass]="[notification.status]">
-                      <span class="table-img msg-user ">
-                        <i class="material-icons-outlined nfc-type-icon"
-                          [ngClass]="[notification.color]">{{notification.icon}}</i>
+                    @if (slaNotifications.length === 0) {
+                      <div class="nfc-empty">
+                        <app-feather-icons [icon]="'check-circle'" [class]="'nfc-empty-icon'"></app-feather-icons>
+                        <p>No active SLA alerts</p>
+                        <span class="nfc-empty-sub">All NCs are within the ISO 10.2 SLA</span>
+                      </div>
+                    }
+                    @for (notification of slaNotifications; track notification.id) {
+                    <button mat-menu-item (click)="onNotificationClick(notification.nc_id)"
+                      [ngClass]="[notification.status, notification.color]">
+                      @if (notification.status === 'msg-unread') {
+                        <span class="unread-dot" [ngClass]="notification.color"></span>
+                      }
+                      <span class="table-img msg-user">
+                        <app-feather-icons
+                          [icon]="notification.type === 'BREACHED' ? 'alert-octagon' : 'clock'"
+                          [class]="'nfc-type-icon ' + notification.color">
+                        </app-feather-icons>
                       </span>
                       <span class="menu-info">
-                        <span class="menu-title">{{notification.message}}</span>
+                        <span class="menu-title">{{ notification.message }}</span>
                         <span class="menu-desc mt-2">
-                          <i class="material-icons">access_time</i> {{notification.time}}
+                          <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
+                          {{ notification.time }}
                         </span>
                       </span>
                       <span class="nfc-close">
@@ -82,17 +103,16 @@
               </ng-scrollbar>
             </div>
             <div class="nfc-footer">
-              <a class="nfc-read-all">Read
-                All Notifications</a>
+              <a class="nfc-read-all" routerLink="/admin/quality/nc-list">View all NCs</a>
             </div>
           </mat-menu>
         </li>
-        <!-- #END# Notifications-->
+        <!-- #END# SLA Notifications -->
         <li class="nav-item user_profile">
           <button mat-button [matMenuTriggerFor]="profilemenu">
             <div class="chip dropdown-toggle" ngbDropdownToggle class="">
-              <span>Ella Jones</span>
-              <img src="{{userImg}}" class="user_img" width="32" height="32" alt="User">
+              <span>{{ userName }}</span>
+              <span class="user_avatar_initials">{{ userInitials }}</span>
             </div>
           </button>
           <mat-menu #profilemenu="matMenu" class="profile-menu">

@@ -1,0 +1,191 @@
+// ============================================================
+// Thème "Contrôle Qualité" — variables + composants réutilisables
+// ============================================================
+
+:root {
+  --qc-ink: #101828;
+  --qc-ink-soft: #667085;
+  --qc-paper: #f8fafc;
+  --qc-card: #ffffff;
+  --qc-line: #e4e7ec;
+
+  --qc-blue: #2563eb;
+  --qc-blue-soft: #93c5fd;
+  --qc-amber: #d97706;
+  --qc-red: #dc2626;
+  --qc-green: #16a34a;
+  --qc-purple: #7c3aed;
+
+  --qc-radius-sm: 6px;
+  --qc-radius: 10px;
+  --qc-radius-lg: 12px;
+  --qc-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --qc-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+}
+
+@mixin qc-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--qc-ink-soft);
+}
+
+@mixin qc-heading {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--qc-ink);
+}
+
+@mixin qc-registration-marks {
+  position: relative;
+
+  &::before, &::after,
+  .reg-mark-br, .reg-mark-tr {
+    content: '+';
+    position: absolute;
+    font-size: 14px;
+    color: var(--qc-line);
+    line-height: 1;
+    font-family: monospace;
+  }
+  &::before { top: 6px; left: 6px; }
+  .reg-mark-tr { top: 6px; right: 6px; position: absolute; }
+  .reg-mark-br { bottom: 6px; right: 6px; position: absolute; }
+  &::after { bottom: 6px; left: 6px; }
+}
+
+@mixin qc-stamp($color, $rotate: 0deg) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid $color;
+  color: $color;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.qc-page {
+  background: var(--qc-paper);
+  min-height: 100%;
+  padding: 32px;
+}
+
+.qc-eyebrow {
+  @include qc-label;
+  margin-bottom: 4px;
+}
+
+.qc-title {
+  @include qc-heading;
+  font-size: 24px;
+  margin: 0 0 20px 0;
+}
+
+.qc-card {
+  background: var(--qc-card);
+  border: 1px solid var(--qc-line);
+  border-radius: var(--qc-radius);
+  padding: 20px;
+  box-shadow: var(--qc-shadow-sm);
+}
+
+.qc-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+
+  a {
+    color: var(--qc-ink-soft);
+    text-decoration: none;
+    &:hover { color: var(--qc-blue); }
+  }
+
+  .crumb-sep {
+    width: 12px;
+    height: 12px;
+    color: var(--qc-line);
+  }
+
+  .crumb-current {
+    color: var(--qc-ink);
+    font-weight: 600;
+  }
+}
+
+.qc-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--qc-radius-sm);
+  border: 1px solid;
+  font-size: 12.5px;
+
+  i-feather {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &.qc-banner-error {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: var(--qc-red);
+  }
+
+  &.qc-banner-success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: var(--qc-green);
+  }
+}
+
+.qc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: var(--qc-ink-soft);
+
+  .tag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  &.qc-tag-blue { color: #1e3a5f; background: #eff6ff; .tag-dot { background: var(--qc-blue-soft); } }
+  &.qc-tag-amber { color: var(--qc-amber); background: #fffbeb; .tag-dot { background: var(--qc-amber); } }
+  &.qc-tag-red { color: var(--qc-red); background: #fef2f2; .tag-dot { background: var(--qc-red); } }
+  &.qc-tag-purple { color: var(--qc-purple); background: #f5f3ff; .tag-dot { background: var(--qc-purple); } }
+  &.qc-tag-green { color: var(--qc-green); background: #f0fdf4; .tag-dot { background: var(--qc-green); } }
+}
+
+.rag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.rag-green { background: var(--qc-green); }
+  &.rag-amber { background: var(--qc-amber); }
+  &.rag-red { background: var(--qc-red); }
+}

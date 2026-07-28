@@ -32,4 +32,25 @@ export class NcService {
   transitionNc(id: string, toState: string, extra: { notes?: string; assigned_to?: string; due_date?: string } = {}) {
     return this.http.post(`${this.apiUrl}/${id}/transition`, { to_state: toState, ...extra });
   }
+
+  addRootCause(ncId: string, category: string, description: string, identifiedBy: string) {
+    return this.http.post(`${this.apiUrl}/${ncId}/root-cause`, {
+      category,
+      description,
+      identified_by: identifiedBy
+    });
+  }
+
+  addCorrectiveAction(ncId: string, description: string, assignedTo: string, dueDate: string) {
+    return this.http.post(`${this.apiUrl}/${ncId}/corrective-action`, {
+      description,
+      assigned_to: assignedTo,
+      due_date: dueDate // format 'YYYY-MM-DD', compatible avec le type `date` de Pydantic
+    });
+  }
+
+  getTrend() {
+    return this.http.get<any[]>(`${this.apiUrl}/kpi/trend`);
+  }
+  
 }
