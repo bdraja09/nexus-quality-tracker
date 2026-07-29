@@ -1,10 +1,20 @@
 from fastapi import FastAPI
-from app.routers import nc_router, audit_router, auth_router , corrective_action_router , root_cause_router
+from fastapi.concurrency import asynccontextmanager
+from app.routers import nc_router, audit_router, auth_router , corrective_action_router , root_cause_router , sla_router
 
 from app.database import create_db_and_tables
-import app.models  # important : force l'import de tous les modèles
+import app.models 
+from app.jobs.sla_job import start_scheduler
 
-app = FastAPI(title="Nexus P3 - Quality Module")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    create_db_and_tables() 
+    scheduler = start_scheduler()
+    yield
+    # Shutdown
+    scheduler.shutdown() 
+app = FastAPI(title="Nexus P3 - Quality Module", lifespan=lifespan)
 
 @app.on_event("startup")
 def on_startup():
@@ -15,6 +25,7 @@ app.include_router(audit_router.router)
 app.include_router(auth_router.router)
 app.include_router(corrective_action_router.router)
 app.include_router(root_cause_router.router)
+app.include_router(sla_router.router)
 
 @app.get("/health")
 def health():
