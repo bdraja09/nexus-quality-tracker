@@ -1,8 +1,0 @@
-fastapi 
-sqlmodel 
-uvicorn 
-python-dotenv 
-psycopg2-binary 
-alembic 
-pytest 
-httpx
