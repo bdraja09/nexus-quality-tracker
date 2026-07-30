@@ -17,3 +17,4 @@ class NonConformance(SQLModel, table=True):
     raised_at: datetime = Field(default_factory=datetime.utcnow)
     current_state: NCState = Field(default=NCState.RAISED)
     closed_at: Optional[datetime] = None
+    is_deleted: bool = Field(default=False)

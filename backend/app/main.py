@@ -1,20 +1,22 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from app.routers import nc_router, audit_router, auth_router , corrective_action_router , root_cause_router , sla_router
 
 from app.database import create_db_and_tables
 import app.models 
-from app.jobs.sla_job import start_scheduler
+from app.scheduler import start_scheduler
+from app.services.sla_broadcaster import broadcaster
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    create_db_and_tables() 
+    broadcaster.bind_loop(asyncio.get_running_loop())
     scheduler = start_scheduler()
     yield
-    # Shutdown
-    scheduler.shutdown() 
-app = FastAPI(title="Nexus P3 - Quality Module", lifespan=lifespan)
+    scheduler.shutdown()
+
+app = FastAPI(lifespan=lifespan)
 
 @app.on_event("startup")
 def on_startup():
