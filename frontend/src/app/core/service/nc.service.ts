@@ -52,5 +52,9 @@ export class NcService {
   getTrend() {
     return this.http.get<any[]>(`${this.apiUrl}/kpi/trend`);
   }
+
+  assignNc(id: string, operatorId: string, dueDate: string) {
+    return this.http.post(`${this.apiUrl}/${id}/assign`, { operator_id: operatorId, due_date: dueDate });
+  }
   
 }

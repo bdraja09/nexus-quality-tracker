@@ -92,9 +92,9 @@ export class SidebarComponent
     if (this.authService.currentUserValue) {
       const userRole = this.authService.currentUserValue.role;
       this.userFullName =
-        this.authService.currentUserValue.firstName +
+        this.authService.currentUserValue.first_name +
         ' ' +
-        this.authService.currentUserValue.lastName;
+        this.authService.currentUserValue.last_name;
       this.userImg = this.authService.currentUserValue.img;
 
       this.subs.sink = this.sidebarService

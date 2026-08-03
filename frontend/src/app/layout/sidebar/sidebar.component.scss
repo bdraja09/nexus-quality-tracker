@@ -13,11 +13,21 @@ $kuber-purple:  #7c3aed;
 
 :host {
   display: block;
+  -webkit-font-smoothing: antialiased; 
 }
 
 // ─────────────────────────────────────────
 // Sidebar Brand Header
 // ─────────────────────────────────────────
+#leftsidebar.sidebar,
+.sidebar {
+  background-color: #ffffff !important;
+}
+
+.menu, .menu .list {
+  background-color: #ffffff !important;
+}
+
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -50,17 +60,17 @@ $kuber-purple:  #7c3aed;
     align-items: baseline;
     gap: 4px;
     overflow: hidden;
-
     .sidebar-brand-name {
       font-family: 'Inter', sans-serif;
       font-size: 18px;
-      font-weight: 800;
+      font-weight: 600; 
       color: $kuber-text;
-      letter-spacing: 1px;
+      letter-spacing: 0.4px;
       white-space: nowrap;
     }
   }
 }
+
 
 // ─────────────────────────────────────────
 // User Panel
@@ -84,8 +94,8 @@ $kuber-purple:  #7c3aed;
     justify-content: center;
     font-family: 'Inter', sans-serif;
     font-size: 17px;
-    font-weight: 700;
-    color: #ffffff;
+    font-weight: 600;
+    color: $kuber-text;
     text-transform: uppercase;
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
@@ -98,7 +108,7 @@ $kuber-purple:  #7c3aed;
     .sidebar-userpic-name {
       font-family: 'Inter', sans-serif;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 500; 
       color: $kuber-text;
       line-height: 1.3;
     }
@@ -114,7 +124,7 @@ $kuber-purple:  #7c3aed;
   font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
   padding: 3px 10px;
   border-radius: 20px;
@@ -154,10 +164,10 @@ $kuber-purple:  #7c3aed;
         padding: 10px 20px;
         font-family: 'Inter', sans-serif;
         font-size: 13.5px;
-        font-weight: 500;
-        color: $kuber-muted;
+        font-weight: 400;
+        color: $kuber-muted !important;
         border-radius: 0;
-        transition: color 0.2s ease, background-color 0.2s ease, padding-left 0.2s ease;
+        transition: color 0.2s ease, background-color 0.2s ease, padding-left 0.2s ease, font-weight 0.15s ease;
         position: relative;
 
         &::before {
@@ -174,11 +184,13 @@ $kuber-purple:  #7c3aed;
         }
 
         &:hover {
-          color: $kuber-blue;
-          background: $kuber-blue-light;
+          color: $kuber-blue !important;
+          background: $kuber-blue-light !important;
           padding-left: 24px;
+          font-weight: 500;
 
-          .sidebarIcon { color: $kuber-blue; }
+          .sidebarIcon { color: $kuber-blue !important; }
+          .hide-menu { color: $kuber-blue !important; }
           &::before { transform: scaleY(1); }
         }
 
@@ -191,7 +203,7 @@ $kuber-purple:  #7c3aed;
           width: 18px;
           height: 18px;
           flex-shrink: 0;
-          color: #94a3b8;
+          color: #94a3b8 !important;
           transition: color 0.2s ease;
         }
 
@@ -200,26 +212,27 @@ $kuber-purple:  #7c3aed;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          color: inherit !important;
         }
       }
 
       &.active-top > a.menu-top,
       &.active > a.menu-top {
-        color: $kuber-blue;
-        background: $kuber-blue-light;
+        color: $kuber-blue !important;
+        background: $kuber-blue-light !important;
         font-weight: 600;
 
         &::before { transform: scaleY(1); }
-        .sidebarIcon { color: $kuber-blue; }
+        .sidebarIcon { color: $kuber-blue !important; }
+        .hide-menu { color: $kuber-blue !important; }
       }
 
-      // Group headers
       .header {
         font-family: 'Inter', sans-serif;
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.2px;
         color: #94a3b8;
         padding: 16px 20px 6px;
       }

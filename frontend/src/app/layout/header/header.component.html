@@ -5,7 +5,7 @@
         (click)="isNavbarCollapsed = !isNavbarCollapsed" aria-expanded="false"></a>
       <a href="#" onClick="return false;" class="bars" (click)="mobileMenuSidebarOpen($event,'overlay-open')"></a>
       <a class="navbar-brand" routerLink="/admin/quality/dashboard">
-        <img src="assets/images/logo.png" alt="KUBER" class="navbar-logo-img" />
+        <img src="assets/images/kuber-logo.png" alt="KUBER" class="navbar-logo-img" />
         <span class="logo-name">KUBER</span>
       </a>
     </div>
@@ -56,45 +56,75 @@
               </span>
             }
           </button>
-          <mat-menu #notificationMenu="matMenu" class="nfc-menu">
+          <mat-menu #notificationMenu="matMenu" class="nfc-menu" (closed)="cancelDismiss()">
             <div class="nfc-header">
-              <h5 class="mb-0">SLA Alerts</h5>
-              @if (unreadCount > 0) {
-                <a class="nfc-mark-as-read" (click)="markAllAsRead()">Mark all as read</a>
-              }
+              <h5 class="mb-0">Notifications</h5>
+              <div class="nfc-header-actions">
+                <button type="button" class="nfc-filter-toggle" [class.active]="unreadOnly"
+                  (click)="$event.stopPropagation(); toggleUnreadOnly()">
+                  Unread only
+                </button>
+                @if (unreadCount > 0) {
+                  <a class="nfc-mark-as-read" (click)="markAllAsRead()">Mark all as read</a>
+                }
+              </div>
             </div>
+
+            @if (recentlyDismissedId !== null) {
+              <div class="nfc-undo-banner">
+                <span>Alert dismissed</span>
+                <a (click)="$event.stopPropagation(); undoDismiss()">Undo</a>
+              </div>
+            }
+
             <div class="nfc-dropdown">
               <ng-scrollbar style="height: 350px" visibility="hover">
                 <div class="noti-list header-menu">
                   <div class="menu">
-                    @if (slaNotifications.length === 0) {
+                    @if (slaAlerts.length === 0) {
                       <div class="nfc-empty">
                         <app-feather-icons [icon]="'check-circle'" [class]="'nfc-empty-icon'"></app-feather-icons>
                         <p>No active SLA alerts</p>
                         <span class="nfc-empty-sub">All NCs are within the ISO 10.2 SLA</span>
                       </div>
                     }
-                    @for (notification of slaNotifications; track notification.id) {
-                    <button mat-menu-item (click)="onNotificationClick(notification.nc_id)"
-                      [ngClass]="[notification.status, notification.color]">
-                      @if (notification.status === 'msg-unread') {
-                        <span class="unread-dot" [ngClass]="notification.color"></span>
-                      }
-                      <span class="table-img msg-user">
-                        <app-feather-icons
-                          [icon]="notification.type === 'BREACHED' ? 'alert-octagon' : 'clock'"
-                          [class]="'nfc-type-icon ' + notification.color">
-                        </app-feather-icons>
-                      </span>
-                      <span class="menu-info">
-                        <span class="menu-title">{{ notification.message }}</span>
-                        <span class="menu-desc mt-2">
-                          <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
-                          {{ notification.time }}
+                    @for (notification of slaAlerts; track notification.id) {
+                    <button mat-menu-item (click)="onNotificationClick(notification)"
+                      [ngClass]="notification.is_read ? 'msg-read' : 'msg-unread'"
+                      [class.msg-resolved]="notification.resolved_at">
+
+                      <span class="nfc-avatar">
+                        <app-feather-icons [icon]="'file-text'" [class]="'nfc-avatar-icon'"></app-feather-icons>
+                        <span class="nfc-badge-icon" [ngClass]="notification.color">
+                          <app-feather-icons
+                            [icon]="notification.alert_type === 'BREACHED' ? 'alert-octagon' : 'clock'">
+                          </app-feather-icons>
                         </span>
                       </span>
-                      <span class="nfc-close">
-                        <app-feather-icons [icon]="'x'" [class]="'user-menu-icons'"></app-feather-icons>
+
+                      <span class="menu-info">
+                        <span class="menu-title">{{ notification.message }}</span>
+                        <span class="menu-desc">
+                          <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
+                          {{ notification.time }}
+                          @if (notification.resolved_at) {
+                            <span class="resolved-tag">Resolved</span>
+                          }
+                        </span>
+                      </span>
+
+                      <span class="nfc-row-end">
+                        @if (!notification.is_read) {
+                          <span class="unread-dot"></span>
+                        }
+                        <span class="nfc-close" [class.confirming]="confirmingDismissId === notification.id"
+                          (click)="dismissAlert($event, notification)">
+                          @if (confirmingDismissId === notification.id) {
+                            <app-feather-icons [icon]="'alert-triangle'" [class]="'user-menu-icons'"></app-feather-icons>
+                          } @else {
+                            <app-feather-icons [icon]="'x'" [class]="'user-menu-icons'"></app-feather-icons>
+                          }
+                        </span>
                       </span>
                     </button>
                     }

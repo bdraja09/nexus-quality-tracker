@@ -63,6 +63,12 @@
               <span class="tag state-tag" [ngClass]="stateClass(nc.current_state)">
                 {{ stateLabel(nc.current_state) }}
               </span>
+              @if (nc.assigned_to) {
+                <span class="nc-responsible">
+                  <i-feather name="user" class="responsible-icon"></i-feather>
+                  {{ operatorName(nc.assigned_to) }}
+                </span>
+              }
               <span class="nc-date">
                 <i-feather name="calendar" class="date-icon"></i-feather>
                 {{ nc.raised_at | date:'MMM d, y' }}
@@ -77,6 +83,7 @@
                 (click)="doTransition(nc, action)"
                 class="action-btn"
                 [class.is-active]="(action === 'ASSIGNED' && assigningNcId === nc.id_nc) ||
+                                    (action === 'ROOT_CAUSE' && rootCauseNcId === nc.id_nc) ||
                                     (action === 'CORRECTIVE_ACTION' && correctiveNcId === nc.id_nc) ||
                                     (action === 'REJECTED' && rejectingNcId === nc.id_nc)">
                 {{ actionLabel(action) }}
@@ -100,8 +107,8 @@
                 <label>Operator *</label>
                 <select [(ngModel)]="selectedOperator" name="selectedOperator">
                   <option value="" disabled>Select an operator</option>
-                  @for (op of operators; track op.id) {
-                    <option [value]="op.id">{{ op.name }}</option>
+                  @for (op of operators; track op.id_usr) {
+                    <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
                   }
                 </select>
               </div>
@@ -122,11 +129,11 @@
             </div>
           }
 
-          <!-- Root cause + corrective action -->
-          @if (correctiveNcId === nc.id_nc) {
-            <div class="inline-panel corrective-panel">
+          <!-- Root cause -->
+          @if (rootCauseNcId === nc.id_nc) {
+            <div class="inline-panel root-cause-panel">
               <div class="form-section">
-                <span class="section-label">Root cause</span>
+                <span class="section-label">Root cause identification</span>
                 <div class="field">
                   <label>Category (5M) *</label>
                   <select [(ngModel)]="rootCauseCategory" name="rootCauseCategory">
@@ -146,8 +153,46 @@
                 </div>
               </div>
 
+              @if (rootCauseError) {
+                <div class="form-banner banner-error inline-banner">
+                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+                  <span>{{ rootCauseError }}</span>
+                </div>
+              }
+
+              <div class="inline-actions">
+                <button
+                  mat-flat-button
+                  color="accent"
+                  [disabled]="!rootCauseFormValid || rootCauseSubmitting"
+                  (click)="confirmRootCause(nc)">
+                  @if (rootCauseSubmitting) {
+                    <i-feather name="loader" class="btn-spinner"></i-feather>
+                  }
+                  {{ rootCauseSubmitting ? 'Saving…' : 'Save Root Cause' }}
+                </button>
+                <button mat-stroked-button (click)="toggleRootCauseForm(nc)">Cancel</button>
+              </div>
+            </div>
+          }
+
+          <!-- Corrective action -->
+          @if (correctiveNcId === nc.id_nc) {
+            <div class="inline-panel corrective-panel">
               <div class="form-section">
                 <span class="section-label">Corrective action</span>
+
+                <!-- Responsable (NC) — lecture seule, contextuel -->
+                @if (nc.assigned_to) {
+                  <div class="field">
+                    <label class="label-meta">Responsable (NC)</label>
+                    <div class="readonly-field">
+                      <i-feather name="user" class="readonly-icon"></i-feather>
+                      <span>{{ operatorName(nc.assigned_to) }}</span>
+                    </div>
+                  </div>
+                }
+
                 <div class="field field-wide">
                   <label>Description *</label>
                   <textarea
@@ -157,11 +202,11 @@
                     placeholder="Describe the proposed corrective action…"></textarea>
                 </div>
                 <div class="field">
-                  <label>Assignee *</label>
+                  <label>Assignee — corrective action *</label>
                   <select [(ngModel)]="correctiveAssignedTo" name="correctiveAssignedTo">
                     <option value="" disabled>Select an assignee</option>
-                    @for (op of operators; track op.id) {
-                      <option [value]="op.id">{{ op.name }}</option>
+                    @for (op of operators; track op.id_usr) {
+                      <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
                     }
                   </select>
                 </div>
@@ -187,7 +232,7 @@
                   @if (correctiveSubmitting) {
                     <i-feather name="loader" class="btn-spinner"></i-feather>
                   }
-                  {{ correctiveSubmitting ? 'Saving…' : 'Save' }}
+                  {{ correctiveSubmitting ? 'Saving…' : 'Propose Action' }}
                 </button>
                 <button mat-stroked-button (click)="toggleCorrectiveForm(nc)">Cancel</button>
               </div>

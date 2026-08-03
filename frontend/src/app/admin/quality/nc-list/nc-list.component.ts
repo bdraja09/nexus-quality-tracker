@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 const ACTION_LABELS: Record<string, string> = {
   ASSIGNED: 'Assign',
   UNDER_INVESTIGATION: 'Start investigation',
+  ROOT_CAUSE: 'Identify root cause',
   CORRECTIVE_ACTION: 'Propose corrective action',
   CLOSED: 'Close',
   REJECTED: 'Reject'
@@ -71,10 +72,15 @@ export class NcListComponent implements OnInit {
   assignNotes = '';
   assignError = '';
 
-  // ── Root cause + corrective action form ──
-  correctiveNcId: string | null = null;
+  // ── Root cause form ──
+  rootCauseNcId: string | null = null;
   rootCauseCategory = '';
   rootCauseDescription = '';
+  rootCauseSubmitting = false;
+  rootCauseError = '';
+
+  // ── Corrective action form ──
+  correctiveNcId: string | null = null;
   correctiveDescription = '';
   correctiveAssignedTo = '';
   correctiveDueDate = '';
@@ -90,6 +96,10 @@ export class NcListComponent implements OnInit {
 
   get userRole(): string {
     return this.authService.currentUserValue?.role;
+  }
+
+  get currentUserId(): string {
+    return this.authService.currentUserValue?.id ?? '';
   }
 
   get canDelete(): boolean {
@@ -114,14 +124,14 @@ export class NcListComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadNcs();
-    if (this.userRole === Role.Manager) {
-      this.ncService.getOperators().subscribe({
-        next: (data) => this.operators = data,
-        error: () => {}
-      });
-    }
+  this.loadNcs();
+  if (this.userRole === Role.Manager || this.userRole === Role.Operator) {
+    this.ncService.getOperators().subscribe({
+      next: (data) => this.operators = data,
+      error: () => {}
+    });
   }
+}
 
   loadNcs() {
     this.loading = true;
@@ -150,7 +160,8 @@ export class NcListComponent implements OnInit {
       },
       Operator: {
         ASSIGNED: ['UNDER_INVESTIGATION'],
-        UNDER_INVESTIGATION: ['CORRECTIVE_ACTION']
+        UNDER_INVESTIGATION: ['ROOT_CAUSE', 'CORRECTIVE_ACTION'],
+        CORRECTIVE_ACTION: ['CORRECTIVE_ACTION']
       },
       Auditor: {}
     };
@@ -171,6 +182,7 @@ export class NcListComponent implements OnInit {
 
   private closeAllInlineForms() {
     this.assigningNcId = null;
+    this.rootCauseNcId = null;
     this.correctiveNcId = null;
     this.rejectingNcId = null;
   }
@@ -189,38 +201,70 @@ export class NcListComponent implements OnInit {
   }
 
   confirmAssign(nc: any) {
-    if (!this.selectedOperator) return;
-    this.assignError = '';
-    this.ncService.transitionNc(nc.id_nc, 'ASSIGNED', {
-      assigned_to: this.selectedOperator,
-      due_date: this.dueDate || undefined,
-      notes: this.assignNotes || undefined
-    }).subscribe({
-      next: () => { this.assigningNcId = null; this.loadNcs(); },
-      error: (err) => this.assignError = err.error?.detail || 'Something went wrong while assigning this NC.'
+  if (!this.selectedOperator || !this.dueDate) return;
+  this.assignError = '';
+  this.ncService.assignNc(nc.id_nc, this.selectedOperator, this.dueDate).subscribe({
+    next: () => { this.assigningNcId = null; this.loadNcs(); },
+    error: (err) => this.assignError = err.error?.detail || 'Something went wrong while assigning this NC.'
+  });
+}
+
+  // ── Root cause form ──
+  toggleRootCauseForm(nc: any) {
+    const wasOpen = this.rootCauseNcId === nc.id_nc;
+    this.closeAllInlineForms();
+    if (!wasOpen) {
+      this.rootCauseNcId = nc.id_nc;
+      this.rootCauseCategory = '';
+      this.rootCauseDescription = '';
+      this.rootCauseError = '';
+    }
+  }
+
+  get rootCauseFormValid(): boolean {
+    return !!this.rootCauseCategory && this.rootCauseDescription.trim().length > 0;
+  }
+
+  confirmRootCause(nc: any) {
+    if (!this.rootCauseFormValid || this.rootCauseSubmitting) return;
+    this.rootCauseSubmitting = true;
+    this.rootCauseError = '';
+
+    const identifiedBy = this.authService.currentUserValue?.id;
+
+    this.ncService.addRootCause(
+      nc.id_nc,
+      this.rootCauseCategory,
+      this.rootCauseDescription.trim(),
+      identifiedBy
+    ).subscribe({
+      next: () => {
+        this.rootCauseSubmitting = false;
+        this.rootCauseNcId = null;
+        this.loadNcs();
+      },
+      error: (err) => {
+        this.rootCauseSubmitting = false;
+        this.rootCauseError = err.error?.detail || 'Something went wrong while saving the root cause.';
+      }
     });
   }
 
-  // ── Root cause + corrective action ──
+  // ── Corrective action form ──
   toggleCorrectiveForm(nc: any) {
     const wasOpen = this.correctiveNcId === nc.id_nc;
     this.closeAllInlineForms();
     if (!wasOpen) {
       this.correctiveNcId = nc.id_nc;
-      this.rootCauseCategory = '';
-      this.rootCauseDescription = '';
       this.correctiveDescription = '';
-      this.correctiveAssignedTo = '';
+      this.correctiveAssignedTo = this.userRole === Role.Operator ? this.currentUserId : '';
       this.correctiveDueDate = '';
       this.correctiveError = '';
     }
   }
 
-  // due_date and assigned_to are required by CorrectiveActionRequest on the API side
   get correctiveFormValid(): boolean {
-    return !!this.rootCauseCategory
-      && this.rootCauseDescription.trim().length > 0
-      && this.correctiveDescription.trim().length > 0
+    return this.correctiveDescription.trim().length > 0
       && !!this.correctiveAssignedTo
       && !!this.correctiveDueDate;
   }
@@ -230,22 +274,12 @@ export class NcListComponent implements OnInit {
     this.correctiveSubmitting = true;
     this.correctiveError = '';
 
-    const identifiedBy = this.authService.currentUserValue?.id;
-
-    forkJoin({
-      rootCause: this.ncService.addRootCause(
-        nc.id_nc,
-        this.rootCauseCategory,
-        this.rootCauseDescription.trim(),
-        identifiedBy
-      ),
-      correctiveAction: this.ncService.addCorrectiveAction(
-        nc.id_nc,
-        this.correctiveDescription.trim(),
-        this.correctiveAssignedTo,
-        this.correctiveDueDate
-      )
-    }).subscribe({
+    this.ncService.addCorrectiveAction(
+      nc.id_nc,
+      this.correctiveDescription.trim(),
+      this.correctiveAssignedTo,
+      this.correctiveDueDate
+    ).subscribe({
       next: () => {
         this.ncService.transitionNc(nc.id_nc, 'CORRECTIVE_ACTION', {}).subscribe({
           next: () => {
@@ -255,14 +289,14 @@ export class NcListComponent implements OnInit {
           },
           error: (err) => {
             this.correctiveSubmitting = false;
-            this.correctiveError = err.error?.detail || 'Root cause and corrective action were saved, but the state transition failed.';
+            this.correctiveError = err.error?.detail || 'Corrective action saved, but state transition failed.';
             this.loadNcs();
           }
         });
       },
       error: (err) => {
         this.correctiveSubmitting = false;
-        this.correctiveError = err.error?.detail || 'Something went wrong while saving the root cause or corrective action.';
+        this.correctiveError = err.error?.detail || 'Something went wrong while saving the corrective action.';
       }
     });
   }
@@ -290,6 +324,7 @@ export class NcListComponent implements OnInit {
   // ── Generic transition dispatch ──
   doTransition(nc: any, toState: string) {
     if (toState === 'ASSIGNED') { this.toggleAssignForm(nc); return; }
+    if (toState === 'ROOT_CAUSE') { this.toggleRootCauseForm(nc); return; }
     if (toState === 'CORRECTIVE_ACTION') { this.toggleCorrectiveForm(nc); return; }
     if (toState === 'REJECTED') { this.toggleRejectForm(nc); return; }
 
@@ -309,7 +344,7 @@ export class NcListComponent implements OnInit {
   }
 
   operatorName(id: string): string {
-    const op = this.operators.find(o => o.id === id);
-    return op ? op.name : (id || '—');
+    const op = this.operators.find(o => o.id_usr === id);
+    return op ? `${op.first_name} ${op.last_name}` : (id || '—');
   }
 }

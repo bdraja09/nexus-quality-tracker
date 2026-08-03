@@ -49,6 +49,18 @@
       "submenu": []
     },
     {
+      "path": "/admin/quality/audits",
+      "title": "Audits Internes",
+      "iconType": "feather",
+      "icon": "check-square",
+      "class": "",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "role": ["All", "Manager", "Operator", "Auditor"],
+      "submenu": []
+    },
+    {
       "path": "",
       "title": "MENUITEMS.MAIN.TEXT",
       "iconType": "",

@@ -294,6 +294,27 @@
   }
 }
 
+// ─── Responsable badge (in nc-card-tags) ───
+.nc-responsible {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--qc-ink-soft, #64748b);
+
+  .responsible-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+}
+
 .nc-card-actions {
   display: flex;
   align-items: center;
@@ -322,7 +343,7 @@
   }
 }
 
-// ─── Inline panels (assign / root cause + corrective action / reject) ───
+// ─── Inline panels (assign / root cause / reject) ───
 .inline-panel {
   flex-basis: 100%;
   margin-top: 4px;
@@ -336,6 +357,7 @@
 }
 
 .assign-inline,
+.root-cause-panel,
 .reject-inline {
   flex-direction: row;
   flex-wrap: wrap;
@@ -400,6 +422,34 @@
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
   }
+
+  // Readonly contextual field 
+  .label-meta {
+    color: var(--qc-ink-soft, #64748b);
+    font-style: italic;
+  }
+
+  .readonly-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px dashed var(--qc-line, #e2e8f0);
+    border-radius: 6px;
+    background: #f8fafc;
+    font-size: 12.5px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--qc-ink-soft, #64748b);
+    cursor: default;
+    user-select: none;
+
+    .readonly-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      color: #94a3b8;
+    }
+  }
 }
 
 .inline-actions {
@@ -430,9 +480,88 @@
   to { transform: rotate(360deg); }
 }
 
-.corrective-panel .inline-actions {
-  margin-left: 0;
-  justify-content: flex-end;
+
+.corrective-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 20px;
+  background: #fafbfc;
+  border-top: 1px solid var(--qc-line, #e2e8f0);
+
+  .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &:first-child {
+      padding-right: 24px;
+      border-right: 1px solid var(--qc-line, #e2e8f0);
+    }
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    select, textarea, input {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: #ffffff;
+
+      &:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+    }
+
+    textarea { resize: vertical; min-height: 60px; }
+  }
+
+  .field-wide { grid-column: 1 / -1; }
+
+  .inline-banner { grid-column: 1 / -1; }
+
+  .inline-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--qc-line, #e2e8f0);
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+
+    .form-section:first-child {
+      padding-right: 0;
+      border-right: none;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--qc-line, #e2e8f0);
+    }
+  }
 }
 
 // ─── Empty state ───
@@ -456,7 +585,7 @@
   p { margin: 0; }
 }
 
-// ─── Responsive ───
+// ─── Responsive  ───
 @media (max-width: 720px) {
   .page-head {
     flex-direction: column;

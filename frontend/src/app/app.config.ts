@@ -6,7 +6,7 @@ import {
 } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { APP_ROUTE } from './app.routes';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { JwtInterceptor } from '@core/interceptor/jwt.interceptor';
@@ -32,7 +32,7 @@ export function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(),
-    provideRouter(APP_ROUTE),
+    provideRouter(APP_ROUTE, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
     provideAnimations(),
     { provide: LocationStrategy, useClass: HashLocationStrategy },
     DirectionService,
@@ -62,6 +62,7 @@ export const appConfig: ApplicationConfig = {
           monthYearA11yLabel: 'YYYY MMM',
         },
       },
+      
     },
     importProvidersFrom(FeatherModule.pick(allIcons)),
     provideCharts(withDefaultRegisterables()),

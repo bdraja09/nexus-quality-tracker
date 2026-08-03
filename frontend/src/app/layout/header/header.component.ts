@@ -4,45 +4,48 @@ import {
   Inject,
   ElementRef,
   OnInit,
+  OnDestroy,
   Renderer2,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConfigService } from '@config';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
-import { LanguageService, InConfiguration, AuthService, NcService } from '@core';
+import { LanguageService, InConfiguration, AuthService } from '@core';
 import { NgScrollbar } from 'ngx-scrollbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { FeatherIconsComponent } from '@shared/components/feather-icons/feather-icons.component';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 
-interface SlaNotification {
+interface SlaAlert {
   id: number;
   nc_id: string;
-  type: 'BREACHED' | 'WARNING';
+  alert_type: 'WARNING' | 'BREACHED';
+  created_at: string;
+  resolved_at: string | null;
+  is_read: boolean;
+}
+
+interface SlaAlertView extends SlaAlert {
   message: string;
   time: string;
-  color: string;
-  status: string;
+  color: 'nfc-red' | 'nfc-orange';
 }
 
 @Component({
-    selector: 'app-header',
-    templateUrl: './header.component.html',
-    styleUrls: ['./header.component.scss'],
-    imports: [
-        RouterLink,
-        NgClass,
-        MatButtonModule,
-        FeatherIconsComponent,
-        MatMenuModule,
-        NgScrollbar,
-    ]
+  selector: 'app-header',
+  templateUrl: './header.component.html',
+  styleUrls: ['./header.component.scss'],
+  imports: [
+    RouterLink,
+    NgClass,
+    MatButtonModule,
+    FeatherIconsComponent,
+    MatMenuModule,
+    NgScrollbar,
+  ]
 })
-export class HeaderComponent
-  extends UnsubscribeOnDestroyAdapter
-  implements OnInit
-{
+export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnInit, OnDestroy {
   public config!: InConfiguration;
   userName = '';
   userInitials = '';
@@ -56,12 +59,21 @@ export class HeaderComponent
   docElement?: HTMLElement;
   isFullScreen = false;
 
-  // ─── SLA notifications ───
-  slaNotifications: SlaNotification[] = [];
+  // ─── SLA ───
+  slaAlerts: SlaAlertView[] = [];
   unreadCount = 0;
+  unreadOnly = false;
+  confirmingDismissId: number | null = null;
+  recentlyDismissedId: number | null = null;
+
+  // ⚠️ URL absolue obligatoire car frontend sur :4200, backend sur :8000
+  private readonly API = 'http://localhost:8000';
+
+  private eventSource?: EventSource;
+  private undoTimeoutHandle?: ReturnType<typeof setTimeout>;
 
   get hasBreachedNotification(): boolean {
-    return this.slaNotifications.some(n => n.type === 'BREACHED');
+    return this.slaAlerts.some(a => a.alert_type === 'BREACHED' && !a.resolved_at && !a.is_read);
   }
 
   constructor(
@@ -118,33 +130,74 @@ export class HeaderComponent
       this.flagvalue = val.map((element) => element.flag);
     }
 
-    this.loadSlaNotifications();
-    setInterval(() => this.loadSlaNotifications(), 2 * 60 * 1000);
+    // ─── Charge SLA immédiatement, puis écoute le flux temps réel (SSE) ───
+    this.refreshAlerts();
+    this.connectToSlaStream();
   }
 
-  loadSlaNotifications() {
-    this.http.get<any>('/sla/alerts').subscribe({
+  // ─── Temps réel (SSE) ───
+
+  private connectToSlaStream(): void {
+    this.eventSource = new EventSource(`${this.API}/sla/stream`);
+
+    this.eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        console.log('[SLA] événement temps réel reçu :', payload);
+        // Le payload publié par le backend ne contient que
+        // {nc_id, alert_type, created_at} — pas l'objet SlaAlert complet
+        // (id, is_read, etc.). On recharge la liste complète pour rester
+        // exactement synchronisé avec l'état réel en base, sans reconstruire
+        // un objet partiel côté client.
+        this.refreshAlerts();
+      } catch (e) {
+        console.error('[SLA] payload SSE invalide :', e);
+      }
+    };
+
+    this.eventSource.onerror = () => {
+      // EventSource se reconnecte automatiquement côté navigateur —
+      // rien à faire ici, juste un log pour le diagnostic si besoin.
+      console.warn('[SLA] connexion SSE interrompue, reconnexion automatique en cours…');
+    };
+  }
+
+  // ─── Data loading ───
+
+  private refreshAlerts(): void {
+    this.loadAlerts();
+    this.loadUnreadCount();
+  }
+
+  private loadAlerts(): void {
+    const params: Record<string, string> = this.unreadOnly ? { unread_only: 'true' } : {};
+    this.http.get<{ alerts: SlaAlert[] }>(`${this.API}/sla/alerts`, { params }).subscribe({
       next: (data) => {
-        const alerts = data.alerts || [];
-        this.unreadCount = alerts.length;
-        this.slaNotifications = alerts.map((a: any) => ({
-          id: a.id,
-          nc_id: a.nc_id,
-          type: a.type,
-          message: a.type === 'BREACHED'
-            ? `NC ${a.nc_id} — SLA breached (>5 days)`
-            : `NC ${a.nc_id} — Due within 24h`,
-          time: this.timeAgo(new Date(a.created_at)),
-          color: a.type === 'BREACHED' ? 'nfc-red' : 'nfc-orange',
-          status: 'msg-unread'
-        }));
+        this.slaAlerts = (data.alerts || []).map((a) => this.toView(a));
       },
       error: (err) => {
-        console.error('Error loading SLA alerts', err);
-        this.slaNotifications = [];
-        this.unreadCount = 0;
+        console.error('[SLA] loadAlerts error:', err);
+        this.slaAlerts = [];
       }
     });
+  }
+
+  private loadUnreadCount(): void {
+    this.http.get<{ count: number }>(`${this.API}/sla/alerts/unread-count`).subscribe({
+      next: (data) => this.unreadCount = data.count,
+      error: (err) => console.error('[SLA] unread-count error:', err)
+    });
+  }
+
+  private toView(a: SlaAlert): SlaAlertView {
+    return {
+      ...a,
+      message: a.alert_type === 'BREACHED'
+        ? `NC ${a.nc_id} — SLA breached (>5 days)`
+        : `NC ${a.nc_id} — Due within 24h`,
+      time: this.timeAgo(new Date(a.created_at)),
+      color: a.alert_type === 'BREACHED' ? 'nfc-red' : 'nfc-orange'
+    };
   }
 
   private timeAgo(date: Date): string {
@@ -156,17 +209,90 @@ export class HeaderComponent
     return `${Math.floor(diff / 86400)}d`;
   }
 
-  markAllAsRead() {
-    this.slaNotifications = this.slaNotifications.map(n => ({
-      ...n,
-      status: 'msg-read'
-    }));
-    this.unreadCount = 0;
+  // ─── Actions ───
+
+  toggleUnreadOnly(): void {
+    this.unreadOnly = !this.unreadOnly;
+    this.loadAlerts();
   }
 
-  onNotificationClick(ncId: string) {
+  markAllAsRead(): void {
+    if (this.unreadCount === 0) return;
+    this.http.post(`${this.API}/sla/alerts/read-all`, {}).subscribe({
+      next: () => {
+        this.slaAlerts = this.slaAlerts.map((a) => ({ ...a, is_read: true }));
+        this.unreadCount = 0;
+      },
+      error: (err) => console.error('[SLA] read-all error:', err)
+    });
+  }
+
+  onNotificationClick(alert: SlaAlertView): void {
+    if (!alert.is_read) {
+      this.http.patch(`${this.API}/sla/alerts/${alert.id}/read`, {}).subscribe({
+        next: () => {
+          alert.is_read = true;
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
+        },
+        error: (err) => console.error('[SLA] patch read error:', err)
+      });
+    }
     this.router.navigate(['/admin/quality/nc-list'], {
-      queryParams: { highlight: ncId }
+      queryParams: { highlight: alert.nc_id }
+    });
+  }
+
+  dismissAlert(event: Event, alert: SlaAlertView): void {
+    event.stopPropagation();
+    const isActive = !alert.resolved_at;
+
+    if (isActive && this.confirmingDismissId !== alert.id) {
+      this.confirmingDismissId = alert.id;
+      return;
+    }
+
+    const force = isActive;
+    this.http.delete(`${this.API}/sla/alerts/${alert.id}`, {
+      params: force ? { force: 'true' } : {}
+    }).subscribe({
+      next: () => {
+        this.confirmingDismissId = null;
+        const wasUnread = !alert.is_read;
+        this.slaAlerts = this.slaAlerts.filter((a) => a.id !== alert.id);
+        if (wasUnread) this.unreadCount = Math.max(0, this.unreadCount - 1);
+        this.showUndo(alert.id);
+      },
+      error: (err) => {
+        console.error('[SLA] delete error:', err);
+        this.confirmingDismissId = null;
+      }
+    });
+  }
+
+  cancelDismiss(): void {
+    this.confirmingDismissId = null;
+  }
+
+  private showUndo(alertId: number): void {
+    this.recentlyDismissedId = alertId;
+    clearTimeout(this.undoTimeoutHandle);
+    this.undoTimeoutHandle = setTimeout(() => {
+      if (this.recentlyDismissedId === alertId) this.recentlyDismissedId = null;
+    }, 5000);
+  }
+
+  undoDismiss(): void {
+    if (this.recentlyDismissedId == null) return;
+    const id = this.recentlyDismissedId;
+    this.http.post(`${this.API}/sla/alerts/${id}/restore`, {}).subscribe({
+      next: () => {
+        this.recentlyDismissedId = null;
+        this.refreshAlerts();
+      },
+      error: (err) => {
+        console.error('[SLA] restore error:', err);
+        this.recentlyDismissedId = null;
+      }
     });
   }
 
@@ -216,5 +342,11 @@ export class HeaderComponent
         this.router.navigate(['/authentication/signin']);
       }
     });
+  }
+
+  override ngOnDestroy(): void {
+    clearTimeout(this.undoTimeoutHandle);
+    this.eventSource?.close();
+    super.ngOnDestroy();
   }
 }

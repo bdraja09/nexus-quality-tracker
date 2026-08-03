@@ -8,10 +8,8 @@
 .dashboard-page {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 24px 16px 40px;
+  padding: 60px 16px 40px;
 
-  // Neutralise les marques d'angle "+" héritées de .qc-card
-  // (thème global) — on ne les veut pas sur ce dashboard.
   .qc-card,
   .qc-card::before,
   .qc-card::after {

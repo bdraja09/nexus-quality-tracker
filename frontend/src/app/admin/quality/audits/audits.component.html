@@ -1,0 +1,477 @@
+<div class="qc-page audits-page">
+
+  <!-- Breadcrumb -->
+  <nav class="qc-breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/admin/quality/dashboard">Quality</a>
+    <i-feather name="chevron-right" class="crumb-sep"></i-feather>
+    <span class="crumb-current">Internal Audits (ISO 9001 §9.2)</span>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="page-head">
+    <div>
+      <div class="qc-eyebrow">P3 — Quality Module</div>
+      <h1 class="qc-title">Internal Audits & Findings Tracking</h1>
+      <p class="page-subtitle">
+        Manage the audit program, record findings, and escalate directly to Non-Conformity (ISO 9001:2015 Clause 9.2).
+      </p>
+    </div>
+    <button mat-flat-button color="primary" class="new-audit-btn" (click)="openCreateModal()">
+      <i-feather name="plus" class="btn-icon"></i-feather>
+      Schedule Audit
+    </button>
+  </div>
+
+  <!-- Notification Banners -->
+  @if (error) {
+    <div class="qc-banner qc-banner-error page-banner">
+      <i-feather name="alert-triangle"></i-feather>
+      <span>{{ error }}</span>
+      <button type="button" class="banner-dismiss" (click)="dismissError()">
+        <i-feather name="x"></i-feather>
+      </button>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="qc-banner qc-banner-success page-banner">
+      <i-feather name="check-circle"></i-feather>
+      <span>{{ successMessage }}</span>
+      <button type="button" class="banner-dismiss" (click)="dismissSuccess()">
+        <i-feather name="x"></i-feather>
+      </button>
+    </div>
+  }
+
+  <!-- KPI Metrics Cards -->
+  <div class="audit-metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon blue-bg">
+        <i-feather name="clipboard"></i-feather>
+      </div>
+      <div class="metric-body">
+        <span class="metric-label">Total Audits</span>
+        <span class="metric-value">{{ totalAuditsCount }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon amber-bg">
+        <i-feather name="clock"></i-feather>
+      </div>
+      <div class="metric-body">
+        <span class="metric-label">Scheduled / In Progress</span>
+        <span class="metric-value">{{ scheduledCount }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon green-bg">
+        <i-feather name="check-square"></i-feather>
+      </div>
+      <div class="metric-body">
+        <span class="metric-label">Completed Audits</span>
+        <span class="metric-value">{{ completedCount }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon purple-bg">
+        <i-feather name="alert-circle"></i-feather>
+      </div>
+      <div class="metric-body">
+        <span class="metric-label">Findings Logged</span>
+        <span class="metric-value">{{ totalFindingsCount }}</span>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon red-bg">
+        <i-feather name="shield-off"></i-feather>
+      </div>
+      <div class="metric-body">
+        <span class="metric-label">Escalated NCs</span>
+        <span class="metric-value">{{ totalEscalatedNcCount }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="filter-row">
+    <div class="filter-tabs">
+      <button type="button" class="filter-tab" [class.active]="statusFilter === 'ALL'" (click)="statusFilter = 'ALL'">
+        All Audits <span class="tab-count">{{ totalAuditsCount }}</span>
+      </button>
+      <button type="button" class="filter-tab" [class.active]="statusFilter === 'SCHEDULED'" (click)="statusFilter = 'SCHEDULED'">
+        Scheduled <span class="tab-count">{{ scheduledCount }}</span>
+      </button>
+      <button type="button" class="filter-tab" [class.active]="statusFilter === 'COMPLETED'" (click)="statusFilter = 'COMPLETED'">
+        Completed <span class="tab-count">{{ completedCount }}</span>
+      </button>
+    </div>
+
+    <div class="filter-inputs">
+      <div class="select-wrapper">
+        <i-feather name="grid" class="select-icon"></i-feather>
+        <select class="custom-select" [(ngModel)]="deptFilter" (change)="loadAudits()">
+          <option value="ALL">All Departments</option>
+          @for (d of departments; track d.id) {
+            <option [value]="d.id">{{ d.name }} ({{ d.id }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="search-wrapper">
+        <i-feather name="search" class="search-icon"></i-feather>
+        <input type="text" class="search-input" placeholder="Search audits..." [(ngModel)]="searchTerm">
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading audits...</p>
+    </div>
+  }
+
+  <!-- Audit List Cards -->
+  @if (!loading) {
+    @if (filteredAudits.length === 0) {
+      <div class="empty-state qc-card">
+        <i-feather name="inbox" class="empty-icon"></i-feather>
+        <h3>No audit found</h3>
+        <p>No audits match the selected filters. Click below to schedule your first audit.</p>
+        <button mat-stroked-button color="primary" (click)="openCreateModal()">
+          <i-feather name="plus" class="btn-icon"></i-feather>
+          Schedule an audit
+        </button>
+      </div>
+    } @else {
+      <div class="audits-list">
+        @for (audit of filteredAudits; track audit.id_audit) {
+          <article class="audit-card qc-card" [class.is-completed]="audit.completed_date">
+            <div class="audit-card-header">
+              <div class="header-main">
+                <div class="audit-id-badge">
+                  <i-feather name="shield" class="shield-icon"></i-feather>
+                  <span>{{ audit.id_audit }}</span>
+                </div>
+                <h3 class="audit-title">{{ audit.audit_type }}</h3>
+                <div class="dept-badge">
+                  <i-feather name="briefcase" class="badge-icon"></i-feather>
+                  {{ getDeptName(audit.dept_id) }}
+                </div>
+              </div>
+
+              <div class="status-box">
+                @if (audit.completed_date) {
+                  <span class="qc-tag qc-tag-green">
+                    <span class="tag-dot"></span> Closed on {{ audit.completed_date | date:'dd/MM/yyyy' }}
+                  </span>
+                } @else {
+                  <span class="qc-tag qc-tag-amber">
+                    <span class="tag-dot"></span> Scheduled for {{ audit.scheduled_date | date:'dd/MM/yyyy' }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div class="audit-card-body">
+              <div class="meta-info">
+                <span class="meta-item">
+                  <i-feather name="user" class="meta-icon"></i-feather>
+                  <strong>Auditor:</strong> {{ audit.auditor_id }}
+                </span>
+                <span class="meta-item">
+                  <i-feather name="calendar" class="meta-icon"></i-feather>
+                  <strong>Planned date:</strong> {{ audit.scheduled_date | date:'mediumDate' }}
+                </span>
+              </div>
+
+              @if (audit.findings) {
+                <div class="findings-summary-box">
+                  <strong class="summary-label">
+                    <i-feather name="file-text" class="summary-icon"></i-feather>
+                    Audit summary:
+                  </strong>
+                  <p class="summary-text">{{ audit.findings }}</p>
+                </div>
+              }
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="audit-card-footer">
+              <div class="left-actions">
+                <button
+                  type="button"
+                  class="findings-toggle-btn"
+                  [class.expanded]="expandedAuditId === audit.id_audit"
+                  (click)="toggleExpandAudit(audit.id_audit)">
+                  <i-feather name="list" class="btn-icon"></i-feather>
+                  Audit findings ({{ (auditFindingsMap[audit.id_audit] || []).length }})
+                  <i-feather [name]="expandedAuditId === audit.id_audit ? 'chevron-up' : 'chevron-down'" class="chevron-icon"></i-feather>
+                </button>
+              </div>
+
+              <div class="right-actions">
+                <button type="button" class="btn-action btn-add-finding" (click)="openAddFindingModal(audit)">
+                  <i-feather name="plus-circle" class="btn-icon"></i-feather>
+                  New Finding
+                </button>
+
+                @if (!audit.completed_date) {
+                  <button type="button" class="btn-action btn-complete" (click)="openCompleteModal(audit)">
+                    <i-feather name="check-circle" class="btn-icon"></i-feather>
+                    Close Audit
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Drawer Findings -->
+            @if (expandedAuditId === audit.id_audit) {
+              <div class="findings-drawer">
+                <div class="drawer-header">
+                  <h4>Findings and Nonconformities</h4>
+                  <span class="drawer-count">{{ (auditFindingsMap[audit.id_audit] || []).length }} finding(s)</span>
+                </div>
+
+                @if (loadingFindingsMap[audit.id_audit]) {
+                  <div class="drawer-loading">
+                    <div class="spinner-small"></div>
+                    <span>Loading findings...</span>
+                  </div>
+                } @else if ((auditFindingsMap[audit.id_audit] || []).length === 0) {
+                  <div class="drawer-empty">
+                    <i-feather name="check" class="empty-check"></i-feather>
+                    <p>No findings recorded for this audit. Click "New Finding" to log a deviation.</p>
+                  </div>
+                } @else {
+                  <div class="findings-grid">
+                    @for (finding of auditFindingsMap[audit.id_audit]; track finding.id_finding) {
+                      <div class="finding-item-card" [ngClass]="'sev-' + finding.severity.toLowerCase()">
+                        <div class="finding-top">
+                          <span class="finding-id">{{ finding.id_finding }}</span>
+                          <span class="sev-badge" [ngClass]="'sev-' + finding.severity.toLowerCase()">
+                            {{ finding.severity }}
+                          </span>
+                        </div>
+                        <p class="finding-desc">{{ finding.description }}</p>
+
+                        <div class="finding-bottom">
+                          @if (finding.nc_id) {
+                            <div class="escalated-status">
+                              <i-feather name="link" class="link-icon"></i-feather>
+                              <span>Escalated to NC: <strong>{{ finding.nc_id }}</strong></span>
+                              <a routerLink="/admin/quality/nc-list" class="view-nc-link">View NC &rarr;</a>
+                            </div>
+                          } @else {
+                            <button type="button" class="btn-escalate" (click)="openEscalateModal(finding)">
+                              <i-feather name="alert-octagon" class="escalate-icon"></i-feather>
+                              Escalate to Non-Conformity (NC)
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+          </article>
+        }
+      </div>
+    }
+  }
+
+  <!-- Modal 1: Schedule Audit -->
+  @if (showCreateModal) {
+    <div class="modal-backdrop" (click)="closeCreateModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i-feather name="calendar" class="modal-icon"></i-feather>
+            Schedule a New Internal Audit
+          </h3>
+          <button type="button" class="close-btn" (click)="closeCreateModal()">&times;</button>
+        </div>
+
+        <form (ngSubmit)="submitCreateAudit()" #createForm="ngForm" class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Audited Department</label>
+            <select class="form-control" [(ngModel)]="newAudit.dept_id" name="dept_id" required>
+              @for (d of departments; track d.id) {
+                <option [value]="d.id">{{ d.name }} ({{ d.id }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Audit Type</label>
+            <select class="form-control" [(ngModel)]="newAudit.audit_type" name="audit_type" required>
+              @for (type of auditTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label class="form-label">Auditor ID</label>
+              <input type="text" class="form-control" [(ngModel)]="newAudit.auditor_id" name="auditor_id" required placeholder="e.g. USR-AUDITOR-01">
+            </div>
+
+            <div class="form-group half">
+              <label class="form-label">Scheduled Date</label>
+              <input type="date" class="form-control" [(ngModel)]="newAudit.scheduled_date" name="scheduled_date" required>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeCreateModal()">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="!createForm.form.valid || submittingAudit">
+              @if (submittingAudit) { Scheduling... } @else { Confirm Scheduling }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal 2: Close Audit -->
+  @if (showCompleteModal) {
+    <div class="modal-backdrop" (click)="closeCompleteModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i-feather name="check-circle" class="modal-icon text-success"></i-feather>
+            Close Audit {{ selectedAuditForComplete?.id_audit }}
+          </h3>
+          <button type="button" class="close-btn" (click)="closeCompleteModal()">&times;</button>
+        </div>
+
+        <form (ngSubmit)="submitCompleteAudit()" class="modal-body">
+          <p class="modal-intro">
+            Enter the summary of general findings to finalize this audit (completion date will be recorded as today).
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Audit Summary and Remarks</label>
+            <textarea
+              rows="4"
+              class="form-control"
+              placeholder="Enter audit summary, strengths and recommendations..."
+              [(ngModel)]="completeFindingsText"
+              name="completeFindingsText">
+            </textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeCompleteModal()">Cancel</button>
+            <button type="submit" class="btn-submit btn-success" [disabled]="submittingComplete">
+              @if (submittingComplete) { Closing... } @else { Confirm Audit Closure }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal 3: Add Finding -->
+  @if (showAddFindingModal) {
+    <div class="modal-backdrop" (click)="closeAddFindingModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i-feather name="plus-circle" class="modal-icon text-amber"></i-feather>
+            Add Finding — {{ selectedAuditForFinding?.id_audit }}
+          </h3>
+          <button type="button" class="close-btn" (click)="closeAddFindingModal()">&times;</button>
+        </div>
+
+        <form (ngSubmit)="submitAddFinding()" #findingForm="ngForm" class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Severity Level</label>
+            <select class="form-control" [(ngModel)]="newFinding.severity" name="severity" required>
+              @for (opt of severityOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.label }} ({{ opt.value }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Detailed description of the deviation or observation</label>
+            <textarea
+              rows="4"
+              class="form-control"
+              placeholder="Describe the deviation observed during the audit in detail..."
+              [(ngModel)]="newFinding.description"
+              name="description"
+              required>
+            </textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeAddFindingModal()">Cancel</button>
+            <button type="submit" class="btn-submit" [disabled]="!findingForm.form.valid || submittingFinding">
+              @if (submittingFinding) { Saving... } @else { Save Finding }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal 4: Escalate Finding to NC -->
+  @if (showEscalateModal) {
+    <div class="modal-backdrop" (click)="closeEscalateModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 class="modal-title">
+            <i-feather name="alert-octagon" class="modal-icon text-danger"></i-feather>
+            Escalate Finding {{ selectedFindingForEscalate?.id_finding }} to NC
+          </h3>
+          <button type="button" class="close-btn" (click)="closeEscalateModal()">&times;</button>
+        </div>
+
+        <form (ngSubmit)="submitEscalateFinding()" #escalateForm="ngForm" class="modal-body">
+          <p class="modal-intro">
+            This action will automatically create a <strong>Non-Conformity (NC)</strong> in the Quality module and permanently link it to this audit finding.
+          </p>
+
+          <div class="finding-preview-box">
+            <div class="preview-header">
+              <span class="sev-badge" [ngClass]="'sev-' + (selectedFindingForEscalate?.severity || 'medium').toLowerCase()">
+                {{ selectedFindingForEscalate?.severity }}
+              </span>
+              <span class="preview-id">{{ selectedFindingForEscalate?.id_finding }}</span>
+            </div>
+            <p class="preview-text">{{ selectedFindingForEscalate?.description }}</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Non-Conformity Title</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Short title for the Non-Conformity..."
+              [(ngModel)]="escalateTitle"
+              name="escalateTitle"
+              required>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeEscalateModal()">Cancel</button>
+            <button type="submit" class="btn-submit btn-danger" [disabled]="!escalateForm.form.valid || submittingEscalate">
+              @if (submittingEscalate) { Escalating... } @else { Confirm NC Escalation }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>
