@@ -32,7 +32,7 @@ class SlaAlert(SQLModel, table=True):
             "ux_sla_alerts_nc_type_active",
             "nc_id", "alert_type",
             unique=True,
-            postgresql_where=text("resolved_at IS NULL AND deleted_at IS NULL""),
+            postgresql_where=text("resolved_at IS NULL AND deleted_at IS NULL"),
         ),
         Index(
             "ix_sla_alerts_unread_visible",
