@@ -7,9 +7,6 @@ from app.models.sla_alert import SlaAlert
 from app.enums import NCState
 from app.services.sla_broadcaster import broadcaster
 
-SLA_TARGET_DAYS = 5
-SLA_WARNING_WINDOW = timedelta(hours=24)
-
 # ISO 9001:2015 §10.2 — le seuil réel du KPI, calculé depuis raised_at.
 # Distinct de NonConformance.due_date (engagement d'assignation, QNC-02) :
 # une NC jamais assignée n'a pas de due_date mais reste soumise à ce seuil.
@@ -52,13 +49,14 @@ def check_sla_and_create_alerts(session: Session) -> dict:
     session.commit()
     return stats
 
+
 def _upsert_alert(session: Session, nc_id: str, alert_type: str, stats: dict) -> None:
     existing = session.exec(
         select(SlaAlert).where(
             SlaAlert.nc_id == nc_id,
             SlaAlert.alert_type == alert_type,
             SlaAlert.resolved_at.is_(None),
-            SlaAlert.deleted_at.is_(None),  # <-- ajouté
+            SlaAlert.deleted_at.is_(None),
         )
     ).first()
     if existing:
@@ -70,7 +68,7 @@ def _upsert_alert(session: Session, nc_id: str, alert_type: str, stats: dict) ->
                 SlaAlert.nc_id == nc_id,
                 SlaAlert.alert_type == "WARNING",
                 SlaAlert.resolved_at.is_(None),
-                SlaAlert.deleted_at.is_(None),  # <-- ajouté
+                SlaAlert.deleted_at.is_(None),
             )
         ).first()
         if stale_warning:
@@ -113,7 +111,7 @@ def get_unread_count(session: Session) -> int:
     return len(session.exec(stmt).all())
 
 
-def mark_as_read(session: Session, alert_id: int, user_id: Optional[int] = None) -> Optional[SlaAlert]:
+def mark_as_read(session: Session, alert_id: int, user_id: Optional[str] = None) -> Optional[SlaAlert]:
     alert = session.get(SlaAlert, alert_id)
     if not alert or alert.is_read:
         return alert
@@ -126,7 +124,7 @@ def mark_as_read(session: Session, alert_id: int, user_id: Optional[int] = None)
     return alert
 
 
-def mark_all_as_read(session: Session, user_id: Optional[int] = None) -> int:
+def mark_all_as_read(session: Session, user_id: Optional[str] = None) -> int:
     stmt = select(SlaAlert).where(
         SlaAlert.is_read == False,
         SlaAlert.deleted_at.is_(None),
@@ -143,8 +141,7 @@ def mark_all_as_read(session: Session, user_id: Optional[int] = None) -> int:
 
 def delete_alert(session: Session, alert_id: int, force: bool = False) -> bool:
     """Suppression douce. Refuse par défaut si l'alerte est encore active
-    (non résolue) — voir l'explication du bug plus haut. force=True pour
-    un nettoyage admin explicite malgré tout."""
+    (non résolue) — force=True pour un nettoyage admin explicite malgré tout."""
     alert = session.get(SlaAlert, alert_id)
     if not alert or alert.deleted_at is not None:
         return False
@@ -158,8 +155,7 @@ def delete_alert(session: Session, alert_id: int, force: bool = False) -> bool:
 
 def delete_all_alerts(session: Session, only_resolved: bool = True) -> int:
     """only_resolved=True (par défaut) : ne purge que l'historique déjà
-    résolu — un « effacer tout » sûr côté notifications, sans jamais
-    masquer une violation SLA en cours."""
+    résolu — sans jamais masquer une violation SLA en cours."""
     conditions = [SlaAlert.deleted_at.is_(None)]
     if only_resolved:
         conditions.append(SlaAlert.resolved_at.is_not(None))
@@ -188,7 +184,7 @@ def resolve_alerts_for_nc(session: Session, nc_id: str) -> int:
     stmt = select(SlaAlert).where(
         SlaAlert.nc_id == nc_id,
         SlaAlert.resolved_at.is_(None),
-        SlaAlert.deleted_at.is_(None),  # <-- ajouté
+        SlaAlert.deleted_at.is_(None),
     )
     alerts = session.exec(stmt).all()
     now = datetime.utcnow()

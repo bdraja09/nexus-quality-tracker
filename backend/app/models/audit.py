@@ -12,3 +12,4 @@ class Audit(SQLModel, table=True):
     audit_type: str
     scheduled_date: date
     completed_date: Optional[date] = None
+    findings: Optional[str] = None

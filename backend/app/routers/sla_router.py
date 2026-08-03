@@ -1,11 +1,9 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
-from app.routers.auth_router import get_current_user_id
+from app.auth import get_current_user
 from app.services.sla_service import (
     get_active_alerts,
     get_unread_count,
@@ -48,14 +46,13 @@ async def stream_alerts():
         }
     )
 
-
 @router.patch("/alerts/{alert_id}/read")
 def read_alert(
     alert_id: int,
     session: Session = Depends(get_session),
-    user_id: Optional[int] = Depends(get_current_user_id),
+    current_user: dict = Depends(get_current_user),
 ):
-    alert = mark_as_read(session, alert_id, user_id=user_id)
+    alert = mark_as_read(session, alert_id, user_id=current_user["id"])
     if alert is None:
         raise HTTPException(status_code=404, detail="Alerte introuvable")
     return alert
@@ -64,11 +61,10 @@ def read_alert(
 @router.post("/alerts/read-all")
 def read_all_alerts(
     session: Session = Depends(get_session),
-    user_id: Optional[int] = Depends(get_current_user_id),
+    current_user: dict = Depends(get_current_user),
 ):
-    count = mark_all_as_read(session, user_id=user_id)
+    count = mark_all_as_read(session, user_id=current_user["id"])
     return {"marked_read": count}
-
 
 @router.delete("/alerts/{alert_id}")
 def remove_alert(
@@ -79,7 +75,6 @@ def remove_alert(
     try:
         deleted = delete_alert(session, alert_id, force=force)
     except ValueError as exc:
-        # Alerte encore active : on refuse sauf si force=True
         raise HTTPException(status_code=409, detail=str(exc))
     if not deleted:
         raise HTTPException(status_code=404, detail="Alerte introuvable ou déjà supprimée")

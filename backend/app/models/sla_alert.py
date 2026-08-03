@@ -24,7 +24,7 @@ class SlaAlert(SQLModel, table=True):
     resolved_at: Optional[datetime] = None
     is_read: bool = Field(default=False, nullable=False, index=True)
     read_at: Optional[datetime] = None
-    read_by: Optional[int] = Field(default=None, foreign_key="users.id")
+    read_by: Optional[str] = Field(default=None, foreign_key="users.id_usr")
     deleted_at: Optional[datetime] = None
 
     __table_args__ = (
