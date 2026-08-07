@@ -299,10 +299,10 @@
           <button type="button" class="close-btn" (click)="closeCreateModal()">&times;</button>
         </div>
 
-        <form (ngSubmit)="submitCreateAudit()" #createForm="ngForm" class="modal-body">
+        <form [formGroup]="createAuditForm" (ngSubmit)="submitCreateAudit()" class="modal-body">
           <div class="form-group">
             <label class="form-label">Audited Department</label>
-            <select class="form-control" [(ngModel)]="newAudit.dept_id" name="dept_id" required>
+            <select class="form-control" formControlName="dept_id">
               @for (d of departments; track d.id) {
                 <option [value]="d.id">{{ d.name }} ({{ d.id }})</option>
               }
@@ -311,7 +311,7 @@
 
           <div class="form-group">
             <label class="form-label">Audit Type</label>
-            <select class="form-control" [(ngModel)]="newAudit.audit_type" name="audit_type" required>
+            <select class="form-control" formControlName="audit_type">
               @for (type of auditTypes; track type) {
                 <option [value]="type">{{ type }}</option>
               }
@@ -321,18 +321,18 @@
           <div class="form-row">
             <div class="form-group half">
               <label class="form-label">Auditor ID</label>
-              <input type="text" class="form-control" [(ngModel)]="newAudit.auditor_id" name="auditor_id" required placeholder="e.g. USR-AUDITOR-01">
+              <input type="text" class="form-control" formControlName="auditor_id" placeholder="e.g. USR-AUDITOR-01">
             </div>
 
             <div class="form-group half">
               <label class="form-label">Scheduled Date</label>
-              <input type="date" class="form-control" [(ngModel)]="newAudit.scheduled_date" name="scheduled_date" required>
+              <input type="date" class="form-control" formControlName="scheduled_date">
             </div>
           </div>
 
           <div class="modal-footer">
             <button type="button" class="btn-cancel" (click)="closeCreateModal()">Cancel</button>
-            <button type="submit" class="btn-submit" [disabled]="!createForm.form.valid || submittingAudit">
+            <button type="submit" class="btn-submit" [disabled]="createAuditForm.invalid || submittingAudit">
               @if (submittingAudit) { Scheduling... } @else { Confirm Scheduling }
             </button>
           </div>

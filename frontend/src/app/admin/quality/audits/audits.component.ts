@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,24 +10,24 @@ import { AuditService, Audit, AuditFinding, AuthService } from '@core';
 
 export const DEPARTMENTS = [
   { id: 'DEPT-PROD', name: 'Production' },
-  { id: 'DEPT-QUAL', name: 'Qualité & Conformité' },
-  { id: 'DEPT-MAINT', name: 'Maintenance & Ingénierie' },
-  { id: 'DEPT-LOG', name: 'Logistique & Supply Chain' },
-  { id: 'DEPT-RD', name: 'Recherche & Développement' }
+  { id: 'DEPT-QUAL', name: 'Quality & Compliance' },
+  { id: 'DEPT-MAINT', name: 'Maintenance & Engineering' },
+  { id: 'DEPT-LOG', name: 'Logistics & Supply Chain' },
+  { id: 'DEPT-RD', name: 'Research & Development' }
 ];
 
 export const AUDIT_TYPES = [
-  'ISO 9001:2015 Audit Interne',
-  'Audit Procédé & Qualité',
-  'Audit Fournisseur / Sous-traitant',
-  'Audit Sécurité & Environnement'
+  'ISO 9001:2015 Internal Audit',
+  'Process & Quality Audit',
+  'Supplier / Subcontractor Audit',
+  'Safety & Environment Audit'
 ];
 
 export const SEVERITY_OPTIONS = [
-  { value: 'low', label: 'Faible', color: 'var(--qc-green)' },
-  { value: 'medium', label: 'Moyenne', color: 'var(--qc-amber)' },
-  { value: 'high', label: 'Élevée', color: 'var(--qc-red)' },
-  { value: 'critical', label: 'Critique', color: 'var(--qc-purple)' }
+  { value: 'low', label: 'Low', color: 'var(--qc-green)' },
+  { value: 'medium', label: 'Medium', color: 'var(--qc-amber)' },
+  { value: 'high', label: 'High', color: 'var(--qc-red)' },
+  { value: 'critical', label: 'Critical', color: 'var(--qc-purple)' }
 ];
 
 @Component({
@@ -36,6 +36,7 @@ export const SEVERITY_OPTIONS = [
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     RouterLink,
     MatButtonModule,
     MatIconModule,
@@ -59,17 +60,12 @@ export class AuditsComponent implements OnInit {
   auditTypes = AUDIT_TYPES;
   severityOptions = SEVERITY_OPTIONS;
 
-  // Audit creation modal
+  // Schedule Audit modal
   showCreateModal = false;
   submittingAudit = false;
-  newAudit = {
-    dept_id: 'DEPT-PROD',
-    auditor_id: '',
-    audit_type: 'ISO 9001:2015 Audit Interne',
-    scheduled_date: new Date().toISOString().substring(0, 10)
-  };
+  createAuditForm!: FormGroup;
 
-  // Complete Audit modal
+  // Close Audit modal
   showCompleteModal = false;
   submittingComplete = false;
   selectedAuditForComplete: Audit | null = null;
@@ -97,16 +93,21 @@ export class AuditsComponent implements OnInit {
 
   constructor(
     private auditService: AuditService,
-    private authService: AuthService
+    private authService: AuthService,
+    private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
     const user = this.authService.currentUserValue;
-    if (user && user.id) {
-      this.newAudit.auditor_id = user.id;
-    } else {
-      this.newAudit.auditor_id = 'USR-AUDITOR-01';
-    }
+    const defaultAuditor = (user && user.id) ? user.id : 'USR-AUDITOR-01';
+
+    this.createAuditForm = this.fb.group({
+      dept_id: ['DEPT-PROD', Validators.required],
+      audit_type: ['ISO 9001:2015 Internal Audit', Validators.required],
+      auditor_id: [defaultAuditor, Validators.required],
+      scheduled_date: [new Date().toISOString().substring(0, 10), Validators.required]
+    });
+
     this.loadAudits();
   }
 
@@ -119,11 +120,10 @@ export class AuditsComponent implements OnInit {
       next: (data) => {
         this.audits = data;
         this.loading = false;
-        // Pre-fetch findings for audits
         data.forEach(a => this.loadFindingsForAudit(a.id_audit));
       },
       error: (err) => {
-        this.error = 'Erreur lors du chargement des audits: ' + (err.error?.detail || err.message);
+        this.error = 'Error loading audits: ' + (err.error?.detail || err.message);
         this.loading = false;
       }
     });
@@ -155,14 +155,10 @@ export class AuditsComponent implements OnInit {
 
   get filteredAudits(): Audit[] {
     return this.audits.filter(audit => {
-      // Status filter
       if (this.statusFilter === 'SCHEDULED' && audit.completed_date) return false;
       if (this.statusFilter === 'COMPLETED' && !audit.completed_date) return false;
-
-      // Dept filter
       if (this.deptFilter !== 'ALL' && audit.dept_id !== this.deptFilter) return false;
 
-      // Search term
       if (this.searchTerm.trim()) {
         const term = this.searchTerm.toLowerCase();
         const matchesId = audit.id_audit.toLowerCase().includes(term);
@@ -171,12 +167,10 @@ export class AuditsComponent implements OnInit {
         const matchesFindings = (audit.findings || '').toLowerCase().includes(term);
         return matchesId || matchesType || matchesAuditor || matchesFindings;
       }
-
       return true;
     });
   }
 
-  // Counters
   get totalAuditsCount(): number { return this.audits.length; }
   get scheduledCount(): number { return this.audits.filter(a => !a.completed_date).length; }
   get completedCount(): number { return this.audits.filter(a => !!a.completed_date).length; }
@@ -194,48 +188,52 @@ export class AuditsComponent implements OnInit {
     return found ? found.name : deptId;
   }
 
-  // Modal actions - Create Audit
   openCreateModal(): void {
     this.showCreateModal = true;
+    const user = this.authService.currentUserValue;
+    this.createAuditForm.reset({
+      dept_id: 'DEPT-PROD',
+      audit_type: 'ISO 9001:2015 Internal Audit',
+      auditor_id: (user && user.id) ? user.id : 'USR-AUDITOR-01',
+      scheduled_date: new Date().toISOString().substring(0, 10)
+    });
   }
+
   closeCreateModal(): void {
     this.showCreateModal = false;
   }
+
   submitCreateAudit(): void {
-    if (this.submittingAudit) return;
+    if (this.createAuditForm.invalid || this.submittingAudit) return;
     this.submittingAudit = true;
     this.error = '';
 
-    this.auditService.createAudit({
-      dept_id: this.newAudit.dept_id,
-      auditor_id: this.newAudit.auditor_id,
-      audit_type: this.newAudit.audit_type,
-      scheduled_date: this.newAudit.scheduled_date
-    }).subscribe({
+    this.auditService.createAudit(this.createAuditForm.value).subscribe({
       next: (created) => {
         this.submittingAudit = false;
         this.showCreateModal = false;
-        this.successMessage = `Audit ${created.id_audit} planifié avec succès!`;
+        this.successMessage = `Audit ${created.id_audit} scheduled successfully!`;
         this.loadAudits();
         setTimeout(() => this.successMessage = '', 4000);
       },
       error: (err) => {
         this.submittingAudit = false;
-        this.error = 'Échec de la planification: ' + (err.error?.detail || err.message);
+        this.error = 'Scheduling failed: ' + (err.error?.detail || err.message);
       }
     });
   }
 
-  // Modal actions - Complete Audit
   openCompleteModal(audit: Audit): void {
     this.selectedAuditForComplete = audit;
     this.completeFindingsText = audit.findings || '';
     this.showCompleteModal = true;
   }
+
   closeCompleteModal(): void {
     this.showCompleteModal = false;
     this.selectedAuditForComplete = null;
   }
+
   submitCompleteAudit(): void {
     if (!this.selectedAuditForComplete || this.submittingComplete) return;
     this.submittingComplete = true;
@@ -247,28 +245,29 @@ export class AuditsComponent implements OnInit {
       next: () => {
         this.submittingComplete = false;
         this.showCompleteModal = false;
-        this.successMessage = `Audit ${this.selectedAuditForComplete?.id_audit} marqué comme clôturé.`;
+        this.successMessage = `Audit ${this.selectedAuditForComplete?.id_audit} marked as closed.`;
         this.selectedAuditForComplete = null;
         this.loadAudits();
         setTimeout(() => this.successMessage = '', 4000);
       },
       error: (err) => {
         this.submittingComplete = false;
-        this.error = 'Erreur lors de la clôture de l’audit: ' + (err.error?.detail || err.message);
+        this.error = 'Error closing audit: ' + (err.error?.detail || err.message);
       }
     });
   }
 
-  // Modal actions - Add Finding
   openAddFindingModal(audit: Audit): void {
     this.selectedAuditForFinding = audit;
     this.newFinding = { severity: 'medium', description: '' };
     this.showAddFindingModal = true;
   }
+
   closeAddFindingModal(): void {
     this.showAddFindingModal = false;
     this.selectedAuditForFinding = null;
   }
+
   submitAddFinding(): void {
     if (!this.selectedAuditForFinding || !this.newFinding.description.trim() || this.submittingFinding) return;
     this.submittingFinding = true;
@@ -281,7 +280,7 @@ export class AuditsComponent implements OnInit {
       next: (finding) => {
         this.submittingFinding = false;
         this.showAddFindingModal = false;
-        this.successMessage = `Constat d'audit (${finding.id_finding}) ajouté avec succès!`;
+        this.successMessage = `Audit finding (${finding.id_finding}) added successfully!`;
         this.loadFindingsForAudit(auditId);
         this.expandedAuditId = auditId;
         this.selectedAuditForFinding = null;
@@ -289,21 +288,22 @@ export class AuditsComponent implements OnInit {
       },
       error: (err) => {
         this.submittingFinding = false;
-        this.error = 'Erreur lors de l’ajout du constat: ' + (err.error?.detail || err.message);
+        this.error = 'Error adding finding: ' + (err.error?.detail || err.message);
       }
     });
   }
 
-  // Modal actions - Escalate Finding to NC
   openEscalateModal(finding: AuditFinding): void {
     this.selectedFindingForEscalate = finding;
-    this.escalateTitle = `Non-conformité suite à constat audit ${finding.id_finding}`;
+    this.escalateTitle = `Non-conformity following audit finding ${finding.id_finding}`;
     this.showEscalateModal = true;
   }
+
   closeEscalateModal(): void {
     this.showEscalateModal = false;
     this.selectedFindingForEscalate = null;
   }
+
   submitEscalateFinding(): void {
     if (!this.selectedFindingForEscalate || !this.escalateTitle.trim() || this.submittingEscalate) return;
     this.submittingEscalate = true;
@@ -313,14 +313,14 @@ export class AuditsComponent implements OnInit {
       next: (nc) => {
         this.submittingEscalate = false;
         this.showEscalateModal = false;
-        this.successMessage = `Constat ${finding.id_finding} escaladé en Non-Conformité ${nc.ref_code || nc.id_nc}!`;
+        this.successMessage = `Finding ${finding.id_finding} escalated to Non-Conformity ${nc.ref_code || nc.id_nc}!`;
         this.loadFindingsForAudit(finding.audit_id);
         this.selectedFindingForEscalate = null;
         setTimeout(() => this.successMessage = '', 5000);
       },
       error: (err) => {
         this.submittingEscalate = false;
-        this.error = 'Échec de l’escalade en NC: ' + (err.error?.detail || err.message);
+        this.error = 'NC escalation failed: ' + (err.error?.detail || err.message);
       }
     });
   }

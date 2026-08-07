@@ -51,30 +51,25 @@
             [class.has-breach]="hasBreachedNotification">
             <app-feather-icons [icon]="'bell'" [class]="'header-icon'"></app-feather-icons>
             @if (unreadCount > 0) {
-              <span class="label-count" [class.bg-orange]="!hasBreachedNotification" [class.bg-red]="hasBreachedNotification">
-                {{ unreadCount > 9 ? '9+' : unreadCount }}
-              </span>
+            <span class="label-count" [class.bg-orange]="!hasBreachedNotification"
+              [class.bg-red]="hasBreachedNotification">
+              {{ unreadCount > 9 ? '9+' : unreadCount }}
+            </span>
             }
           </button>
           <mat-menu #notificationMenu="matMenu" class="nfc-menu" (closed)="cancelDismiss()">
             <div class="nfc-header">
               <h5 class="mb-0">Notifications</h5>
-              <div class="nfc-header-actions">
-                <button type="button" class="nfc-filter-toggle" [class.active]="unreadOnly"
-                  (click)="$event.stopPropagation(); toggleUnreadOnly()">
-                  Unread only
-                </button>
-                @if (unreadCount > 0) {
-                  <a class="nfc-mark-as-read" (click)="markAllAsRead()">Mark all as read</a>
-                }
-              </div>
+              @if (unreadCount > 0) {
+              <a class="nfc-mark-as-read" (click)="markAllAsRead()">Mark all as read</a>
+              }
             </div>
 
             @if (recentlyDismissedId !== null) {
-              <div class="nfc-undo-banner">
-                <span>Alert dismissed</span>
-                <a (click)="$event.stopPropagation(); undoDismiss()">Undo</a>
-              </div>
+            <div class="nfc-undo-banner">
+              <span>Alert dismissed</span>
+              <a (click)="$event.stopPropagation(); undoDismiss()">Undo</a>
+            </div>
             }
 
             <div class="nfc-dropdown">
@@ -82,11 +77,11 @@
                 <div class="noti-list header-menu">
                   <div class="menu">
                     @if (slaAlerts.length === 0) {
-                      <div class="nfc-empty">
-                        <app-feather-icons [icon]="'check-circle'" [class]="'nfc-empty-icon'"></app-feather-icons>
-                        <p>No active SLA alerts</p>
-                        <span class="nfc-empty-sub">All NCs are within the ISO 10.2 SLA</span>
-                      </div>
+                    <div class="nfc-empty">
+                      <app-feather-icons [icon]="'check-circle'" [class]="'nfc-empty-icon'"></app-feather-icons>
+                      <p>No active SLA alerts</p>
+                      <span class="nfc-empty-sub">All NCs are within the ISO 10.2 SLA</span>
+                    </div>
                     }
                     @for (notification of slaAlerts; track notification.id) {
                     <button mat-menu-item (click)="onNotificationClick(notification)"
@@ -108,21 +103,22 @@
                           <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
                           {{ notification.time }}
                           @if (notification.resolved_at) {
-                            <span class="resolved-tag">Resolved</span>
+                          <span class="resolved-tag">Resolved</span>
                           }
                         </span>
                       </span>
 
                       <span class="nfc-row-end">
                         @if (!notification.is_read) {
-                          <span class="unread-dot"></span>
+                        <span class="unread-dot"></span>
                         }
                         <span class="nfc-close" [class.confirming]="confirmingDismissId === notification.id"
+                          [attr.aria-label]="confirmingDismissId === notification.id ? 'Confirm delete' : 'Delete notification'"
                           (click)="dismissAlert($event, notification)">
                           @if (confirmingDismissId === notification.id) {
-                            <app-feather-icons [icon]="'alert-triangle'" [class]="'user-menu-icons'"></app-feather-icons>
+                          <app-feather-icons [icon]="'check'" [class]="'user-menu-icons'"></app-feather-icons>
                           } @else {
-                            <app-feather-icons [icon]="'x'" [class]="'user-menu-icons'"></app-feather-icons>
+                          <app-feather-icons [icon]="'trash-2'" [class]="'user-menu-icons'"></app-feather-icons>
                           }
                         </span>
                       </span>

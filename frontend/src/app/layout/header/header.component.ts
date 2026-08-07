@@ -6,6 +6,8 @@ import {
   OnInit,
   OnDestroy,
   Renderer2,
+  NgZone,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConfigService } from '@config';
@@ -62,11 +64,9 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
   // ─── SLA ───
   slaAlerts: SlaAlertView[] = [];
   unreadCount = 0;
-  unreadOnly = false;
   confirmingDismissId: number | null = null;
   recentlyDismissedId: number | null = null;
 
-  // ⚠️ URL absolue obligatoire car frontend sur :4200, backend sur :8000
   private readonly API = 'http://localhost:8000';
 
   private eventSource?: EventSource;
@@ -84,7 +84,9 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
     private authService: AuthService,
     private router: Router,
     public languageService: LanguageService,
-    private http: HttpClient
+    private http: HttpClient,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     super();
   }
@@ -141,23 +143,18 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
     this.eventSource = new EventSource(`${this.API}/sla/stream`);
 
     this.eventSource.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        console.log('[SLA] événement temps réel reçu :', payload);
-        // Le payload publié par le backend ne contient que
-        // {nc_id, alert_type, created_at} — pas l'objet SlaAlert complet
-        // (id, is_read, etc.). On recharge la liste complète pour rester
-        // exactement synchronisé avec l'état réel en base, sans reconstruire
-        // un objet partiel côté client.
-        this.refreshAlerts();
-      } catch (e) {
-        console.error('[SLA] payload SSE invalide :', e);
-      }
+      this.ngZone.run(() => {
+        try {
+          const payload = JSON.parse(event.data);
+          console.log('[SLA] événement temps réel reçu :', payload);
+          this.refreshAlerts();
+        } catch (e) {
+          console.error('[SLA] payload SSE invalide :', e);
+        }
+      });
     };
 
     this.eventSource.onerror = () => {
-      // EventSource se reconnecte automatiquement côté navigateur —
-      // rien à faire ici, juste un log pour le diagnostic si besoin.
       console.warn('[SLA] connexion SSE interrompue, reconnexion automatique en cours…');
     };
   }
@@ -170,21 +167,25 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
   }
 
   private loadAlerts(): void {
-    const params: Record<string, string> = this.unreadOnly ? { unread_only: 'true' } : {};
-    this.http.get<{ alerts: SlaAlert[] }>(`${this.API}/sla/alerts`, { params }).subscribe({
+    this.http.get<{ alerts: SlaAlert[] }>(`${this.API}/sla/alerts`).subscribe({
       next: (data) => {
         this.slaAlerts = (data.alerts || []).map((a) => this.toView(a));
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('[SLA] loadAlerts error:', err);
         this.slaAlerts = [];
+        this.cdr.markForCheck();
       }
     });
   }
 
   private loadUnreadCount(): void {
     this.http.get<{ count: number }>(`${this.API}/sla/alerts/unread-count`).subscribe({
-      next: (data) => this.unreadCount = data.count,
+      next: (data) => {
+        this.unreadCount = data.count;
+        this.cdr.markForCheck();
+      },
       error: (err) => console.error('[SLA] unread-count error:', err)
     });
   }
@@ -193,8 +194,8 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
     return {
       ...a,
       message: a.alert_type === 'BREACHED'
-        ? `NC ${a.nc_id} — SLA breached (>5 days)`
-        : `NC ${a.nc_id} — Due within 24h`,
+        ? `NC ${a.nc_id} has breached the 5-day ISO 10.2 SLA — immediate action required`
+        : `NC ${a.nc_id} is approaching its SLA deadline — due within 24h`,
       time: this.timeAgo(new Date(a.created_at)),
       color: a.alert_type === 'BREACHED' ? 'nfc-red' : 'nfc-orange'
     };
@@ -210,11 +211,6 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
   }
 
   // ─── Actions ───
-
-  toggleUnreadOnly(): void {
-    this.unreadOnly = !this.unreadOnly;
-    this.loadAlerts();
-  }
 
   markAllAsRead(): void {
     if (this.unreadCount === 0) return;

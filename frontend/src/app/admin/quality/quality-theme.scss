@@ -18,9 +18,10 @@
 
   --qc-radius-sm: 6px;
   --qc-radius: 10px;
+  --qc-radius: 8px;
   --qc-radius-lg: 12px;
-  --qc-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
-  --qc-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+  --qc-shadow-sm: 0 1px 3px rgba(22, 35, 59, 0.08);
+  --qc-shadow: 0 4px 12px rgba(22, 35, 59, 0.1);
 }
 
 @mixin qc-label {
