@@ -8,8 +8,10 @@ from pydantic import BaseModel
 from app.database import get_session
 from app.models.user import User
 
-SECRET_KEY = os.getenv("JWT_SECRET")
-ALGORITHM = os.getenv("JWT_ALGORITHM")
+from typing import Optional
+
+SECRET_KEY = os.getenv("JWT_SECRET", "nexus3-secret-key-change-in-prod")
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -43,10 +45,25 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
     }
 
 
-def get_current_user(authorization: str = Header(...)):
+def get_current_user(authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="En-tête Authorization manquant")
     try:
-        token = authorization.replace("Bearer ", "")
+        token = authorization.replace("Bearer ", "").strip()
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return {"id": payload["sub"], "role": payload["role"]}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token invalide ou expiré")
+
+
+def get_current_user_optional(authorization: Optional[str] = Header(None)) -> Optional[dict]:
+    if not authorization:
+        return None
+    try:
+        token = authorization.replace("Bearer ", "").strip()
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return {"id": payload["sub"], "role": payload["role"]}
     except Exception:
-        raise HTTPException(status_code=401, detail="Token invalide ou expiré")
+        return None

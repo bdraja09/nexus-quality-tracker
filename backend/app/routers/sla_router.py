@@ -1,10 +1,13 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_user_optional
 from app.services.sla_service import (
+    check_sla_and_create_alerts,
     get_active_alerts,
     get_unread_count,
     mark_as_read,
@@ -22,15 +25,19 @@ router = APIRouter(prefix="/sla", tags=["sla"])
 def list_alerts(
     unread_only: bool = False,
     session: Session = Depends(get_session),
+    current_user: Optional[dict] = Depends(get_current_user_optional),
 ):
     """Chargement initial, et secours si la connexion SSE se coupe."""
-    return {"alerts": get_active_alerts(session, unread_only=unread_only)}
+    return {"alerts": get_active_alerts(session, unread_only=unread_only, current_user=current_user)}
 
 
 @router.get("/alerts/unread-count")
-def unread_count(session: Session = Depends(get_session)):
+def unread_count(
+    session: Session = Depends(get_session),
+    current_user: Optional[dict] = Depends(get_current_user_optional),
+):
     """Pour le badge de notification côté UI."""
-    return {"count": get_unread_count(session)}
+    return {"count": get_unread_count(session, current_user=current_user)}
 
 
 @router.get("/stream")
@@ -50,9 +57,10 @@ async def stream_alerts():
 def read_alert(
     alert_id: int,
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user),
+    current_user: Optional[dict] = Depends(get_current_user_optional),
 ):
-    alert = mark_as_read(session, alert_id, user_id=current_user["id"])
+    user_id = current_user["id"] if current_user else None
+    alert = mark_as_read(session, alert_id, user_id=user_id)
     if alert is None:
         raise HTTPException(status_code=404, detail="Alerte introuvable")
     return alert
@@ -61,9 +69,10 @@ def read_alert(
 @router.post("/alerts/read-all")
 def read_all_alerts(
     session: Session = Depends(get_session),
-    current_user: dict = Depends(get_current_user),
+    current_user: Optional[dict] = Depends(get_current_user_optional),
 ):
-    count = mark_all_as_read(session, user_id=current_user["id"])
+    user_id = current_user["id"] if current_user else None
+    count = mark_all_as_read(session, user_id=user_id)
     return {"marked_read": count}
 
 @router.delete("/alerts/{alert_id}")
@@ -96,3 +105,10 @@ def restore(alert_id: int, session: Session = Depends(get_session)):
     if alert is None:
         raise HTTPException(status_code=404, detail="Alerte introuvable ou non supprimée")
     return alert
+
+@router.post("/check")
+def trigger_sla_check(session: Session = Depends(get_session)):
+    """Déclenche manuellement le scan SLA — utile pour les tests et démos,
+    sans attendre le prochain passage horaire du scheduler."""
+    stats = check_sla_and_create_alerts(session)
+    return stats

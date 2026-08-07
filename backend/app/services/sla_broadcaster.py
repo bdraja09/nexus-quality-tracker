@@ -41,8 +41,11 @@ class SlaBroadcaster:
         queue = self.subscribe()
         try:
             while True:
-                payload = await queue.get()
-                yield f"data: {payload}\n\n"
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=20.0)
+                    yield f"data: {payload}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"
         finally:
             self.unsubscribe(queue)
 

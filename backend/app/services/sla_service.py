@@ -79,16 +79,25 @@ def _upsert_alert(session: Session, nc_id: str, alert_type: str, stats: dict) ->
     session.add(alert)
     stats[alert_type.lower()] += 1
 
+    nc = session.get(NonConformance, nc_id)
+    assigned_to = nc.assigned_to if nc else None
+
     broadcaster.publish({
         "nc_id": nc_id,
         "alert_type": alert_type,
+        "assigned_to": assigned_to,
         "created_at": datetime.utcnow().isoformat()
     })
 
 
-def get_active_alerts(session: Session, unread_only: bool = False) -> List[SlaAlert]:
-    """Alertes non résolues et non supprimées. `unread_only=True` pour le
-    badge de notification (ne montrer que ce qui n'a pas été vu)."""
+def get_active_alerts(
+    session: Session,
+    unread_only: bool = False,
+    current_user: Optional[dict] = None,
+) -> List[SlaAlert]:
+    """Alertes non résolues et non supprimées.
+    Seuls les managers/admins ou la personne assignée à la NC reçoivent l'alerte.
+    """
     conditions = [
         SlaAlert.resolved_at.is_(None),
         SlaAlert.deleted_at.is_(None),
@@ -96,18 +105,41 @@ def get_active_alerts(session: Session, unread_only: bool = False) -> List[SlaAl
     if unread_only:
         conditions.append(SlaAlert.is_read == False)
 
-    alerts = session.exec(select(SlaAlert).where(*conditions)).all()
+    if current_user and current_user.get("role") not in ("Manager", "Admin"):
+        uid = current_user.get("id")
+        stmt = (
+            select(SlaAlert)
+            .join(NonConformance, SlaAlert.nc_id == NonConformance.id_nc)
+            .where(*conditions)
+            .where(NonConformance.assigned_to == uid)
+        )
+    else:
+        stmt = select(SlaAlert).where(*conditions)
+
+    alerts = session.exec(stmt).all()
     severity = {"BREACHED": 0, "WARNING": 1}
     alerts.sort(key=lambda a: (severity.get(a.alert_type, 99), -a.created_at.timestamp()))
     return alerts
 
 
-def get_unread_count(session: Session) -> int:
-    """Pour un compteur de badge côté UI."""
-    stmt = select(SlaAlert).where(
+def get_unread_count(session: Session, current_user: Optional[dict] = None) -> int:
+    """Pour un compteur de badge côté UI, filtré selon le rôle/l'assignation de l'utilisateur."""
+    conditions = [
         SlaAlert.is_read == False,
         SlaAlert.deleted_at.is_(None),
-    )
+    ]
+
+    if current_user and current_user.get("role") not in ("Manager", "Admin"):
+        uid = current_user.get("id")
+        stmt = (
+            select(SlaAlert)
+            .join(NonConformance, SlaAlert.nc_id == NonConformance.id_nc)
+            .where(*conditions)
+            .where(NonConformance.assigned_to == uid)
+        )
+    else:
+        stmt = select(SlaAlert).where(*conditions)
+
     return len(session.exec(stmt).all())
 
 

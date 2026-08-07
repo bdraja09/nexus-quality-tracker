@@ -23,16 +23,13 @@ def start_scheduler() -> BackgroundScheduler:
 
     scheduler.add_job(
         _run_sla_job,
-        trigger=CronTrigger(minute=0),
-        id="sla_check_hourly",
+        trigger=CronTrigger(minute="*"),
+        id="sla_check_minutely",
         replace_existing=True,
     )
     scheduler.start()
 
-    # Un seul passage immédiat au démarrage, appelé directement plutôt que
-    # planifié comme un second job "date" — plus simple, un seul job à
-    # suivre dans scheduler.get_jobs().
     _run_sla_job()
 
-    print("[Scheduler] Job SLA démarré (toutes les heures)")
+    print("[Scheduler] Job SLA démarré (toutes les minutes)")
     return scheduler

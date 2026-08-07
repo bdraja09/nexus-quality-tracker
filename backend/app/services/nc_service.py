@@ -9,7 +9,7 @@ from app.models.user import User
 from app.enums import NCState
 from app.services.state_machine import can_transition, role_can_transition
 from app.services.id_generator import generate_id
-from app.services.sla_service import resolve_alerts_for_nc
+from app.services.sla_service import resolve_alerts_for_nc, check_sla_and_create_alerts
 
 
 class InvalidTransitionError(Exception):
@@ -47,6 +47,7 @@ def raise_nc(session: Session, title: str, description: str, severity, dept_id: 
 
     session.commit()
     session.refresh(nc)
+    check_sla_and_create_alerts(session)
     return nc
 
 
@@ -111,6 +112,8 @@ def transition_nc(
 
     if to_state in (NCState.CLOSED, NCState.REJECTED):
         resolve_alerts_for_nc(session, nc_id)
+    else:
+        check_sla_and_create_alerts(session)
 
     return nc
 
@@ -140,6 +143,7 @@ def assign_nc(session: Session, nc_id: str, operator_id: str, due_date: date, ac
 
     session.commit()
     session.refresh(nc)
+    check_sla_and_create_alerts(session)
     return nc
 
 
