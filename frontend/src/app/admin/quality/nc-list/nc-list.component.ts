@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { NcService, AuthService, Role } from '@core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,7 +13,9 @@ const ACTION_LABELS: Record<string, string> = {
   ROOT_CAUSE: 'Identify root cause',
   CORRECTIVE_ACTION: 'Propose corrective action',
   CLOSED: 'Close',
-  REJECTED: 'Reject'
+  REJECTED: 'Reject',
+  VERIFY: 'Verify corrective actions',
+  REOPEN: 'Reopen'
 };
 
 const STATE_LABELS: Record<string, string> = {
@@ -26,8 +27,6 @@ const STATE_LABELS: Record<string, string> = {
   REJECTED: 'Rejected'
 };
 
-// 5M (Ishikawa) categories for root cause classification.
-// Values stay as-is (backend contract); only the displayed label is English.
 export const ROOT_CAUSE_CATEGORIES = [
   { value: 'main_oeuvre', label: 'Manpower' },
   { value: 'methode', label: 'Method' },
@@ -50,10 +49,8 @@ export class NcListComponent implements OnInit {
 
   rootCauseCategories = ROOT_CAUSE_CATEGORIES;
 
-  // ── Page-level error banner (load failures, delete, generic transitions) ──
   listError = '';
 
-  // ── Status filter ──
   stateFilter = 'ALL';
   stateFilters = [
     { value: 'ALL', label: 'All' },
@@ -92,7 +89,30 @@ export class NcListComponent implements OnInit {
   rejectReason = '';
   rejectError = '';
 
-  constructor(private ncService: NcService, private authService: AuthService) {}
+  // ── Manager verification form ──
+  verifyNcId: string | null = null;
+  verifySubmitting = false;
+  verifyError = '';
+  verifyReassignTo = '';
+  verifyDueDate = '';
+  verifyRejectReason = '';
+
+  // ── Reopen form (CLOSED → ASSIGNED) ──
+  reopenNcId: string | null = null;
+  reopenOperator = '';
+  reopenDueDate = '';
+  reopenError = '';
+  reopenSubmitting = false;
+
+  // ── Detail cache (for verify panel) ──
+  ncDetailMap: { [ncId: string]: any } = {};
+  loadingDetailMap: { [ncId: string]: boolean } = {};
+
+  constructor(
+    private ncService: NcService,
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   get userRole(): string {
     return this.authService.currentUserValue?.role;
@@ -124,14 +144,14 @@ export class NcListComponent implements OnInit {
   }
 
   ngOnInit() {
-  this.loadNcs();
-  if (this.userRole === Role.Manager || this.userRole === Role.Operator) {
-    this.ncService.getOperators().subscribe({
-      next: (data) => this.operators = data,
-      error: () => {}
-    });
+    this.loadNcs();
+    if (this.userRole === Role.Manager || this.userRole === Role.Operator) {
+      this.ncService.getOperators().subscribe({
+        next: (data) => this.operators = data,
+        error: () => {}
+      });
+    }
   }
-}
 
   loadNcs() {
     this.loading = true;
@@ -156,7 +176,8 @@ export class NcListComponent implements OnInit {
         RAISED: ['ASSIGNED'],
         ASSIGNED: ['REJECTED'],
         UNDER_INVESTIGATION: ['REJECTED'],
-        CORRECTIVE_ACTION: ['CLOSED', 'UNDER_INVESTIGATION']
+        CORRECTIVE_ACTION: ['CLOSED', 'VERIFY'],
+        CLOSED: ['REOPEN']
       },
       Operator: {
         ASSIGNED: ['UNDER_INVESTIGATION'],
@@ -185,6 +206,8 @@ export class NcListComponent implements OnInit {
     this.rootCauseNcId = null;
     this.correctiveNcId = null;
     this.rejectingNcId = null;
+    this.verifyNcId = null;
+    this.reopenNcId = null;
   }
 
   // ── Assign ──
@@ -201,13 +224,13 @@ export class NcListComponent implements OnInit {
   }
 
   confirmAssign(nc: any) {
-  if (!this.selectedOperator || !this.dueDate) return;
-  this.assignError = '';
-  this.ncService.assignNc(nc.id_nc, this.selectedOperator, this.dueDate).subscribe({
-    next: () => { this.assigningNcId = null; this.loadNcs(); },
-    error: (err) => this.assignError = err.error?.detail || 'Something went wrong while assigning this NC.'
-  });
-}
+    if (!this.selectedOperator || !this.dueDate) return;
+    this.assignError = '';
+    this.ncService.assignNc(nc.id_nc, this.selectedOperator, this.dueDate).subscribe({
+      next: () => { this.assigningNcId = null; this.loadNcs(); },
+      error: (err) => this.assignError = err.error?.detail || 'Something went wrong while assigning this NC.'
+    });
+  }
 
   // ── Root cause form ──
   toggleRootCauseForm(nc: any) {
@@ -301,6 +324,114 @@ export class NcListComponent implements OnInit {
     });
   }
 
+  // ── Manager verification (CORRECTIVE_ACTION) ──
+  toggleVerifyForm(nc: any) {
+    const wasOpen = this.verifyNcId === nc.id_nc;
+    this.closeAllInlineForms();
+    if (!wasOpen) {
+      this.verifyNcId = nc.id_nc;
+      this.verifyReassignTo = nc.assigned_to || '';
+      this.verifyDueDate = '';
+      this.verifyRejectReason = '';
+      this.verifyError = '';
+      this.verifySubmitting = false;
+      this.loadNcDetail(nc.id_nc);
+    }
+  }
+
+  loadNcDetail(ncId: string): void {
+    if (this.ncDetailMap[ncId] || this.loadingDetailMap[ncId]) return;
+    this.loadingDetailMap[ncId] = true;
+    this.ncService.getNc(ncId).subscribe({
+      next: (detail) => {
+        this.ncDetailMap[ncId] = detail;
+        this.loadingDetailMap[ncId] = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.loadingDetailMap[ncId] = false;
+      }
+    });
+  }
+
+  getNcDetail(ncId: string): any {
+    return this.ncDetailMap[ncId] || {};
+  }
+
+  confirmValidate(nc: any) {
+    if (this.verifySubmitting) return;
+    this.verifySubmitting = true;
+    this.verifyError = '';
+    this.ncService.transitionNc(nc.id_nc, 'CLOSED', {}).subscribe({
+      next: () => {
+        this.verifyNcId = null;
+        this.verifySubmitting = false;
+        this.loadNcs();
+      },
+      error: (err) => {
+        this.verifySubmitting = false;
+        this.verifyError = err.error?.detail || 'Failed to validate and close NC.';
+      }
+    });
+  }
+
+  confirmRejectAndReassign(nc: any) {
+    if (!this.verifyReassignTo || !this.verifyDueDate || !this.verifyRejectReason.trim() || this.verifySubmitting) return;
+    this.verifySubmitting = true;
+    this.verifyError = '';
+
+    this.ncService.assignNc(nc.id_nc, this.verifyReassignTo, this.verifyDueDate).subscribe({
+      next: () => {
+        this.verifySubmitting = false;
+        this.verifyNcId = null;
+        this.loadNcs();
+      },
+      error: (err) => {
+        this.verifySubmitting = false;
+        this.verifyError = err.error?.detail || 'Failed to re-assign NC.';
+      }
+    });
+  }
+
+  // ── Reopen (CLOSED → ASSIGNED) ──
+  toggleReopenForm(nc: any) {
+    const wasOpen = this.reopenNcId === nc.id_nc;
+    this.closeAllInlineForms();
+    if (!wasOpen) {
+      this.reopenNcId = nc.id_nc;
+      this.reopenOperator = nc.assigned_to || '';
+      this.reopenDueDate = '';
+      this.reopenError = '';
+      this.reopenSubmitting = false;
+    }
+  }
+
+  confirmReopen(nc: any) {
+    if (!this.reopenOperator || !this.reopenDueDate || this.reopenSubmitting) return;
+    this.reopenSubmitting = true;
+    this.reopenError = '';
+
+    this.ncService.assignNc(nc.id_nc, this.reopenOperator, this.reopenDueDate).subscribe({
+      next: () => {
+        this.ncService.transitionNc(nc.id_nc, 'ASSIGNED', {}).subscribe({
+          next: () => {
+            this.reopenNcId = null;
+            this.reopenSubmitting = false;
+            this.loadNcs();
+          },
+          error: (err) => {
+            this.reopenSubmitting = false;
+            this.reopenError = err.error?.detail || 'Re-assigned, but failed to reopen NC.';
+          }
+        });
+      },
+      error: (err) => {
+        this.reopenSubmitting = false;
+        this.reopenError = err.error?.detail || 'Failed to re-assign NC.';
+      }
+    });
+  }
+
   // ── Reject ──
   toggleRejectForm(nc: any) {
     const wasOpen = this.rejectingNcId === nc.id_nc;
@@ -327,8 +458,9 @@ export class NcListComponent implements OnInit {
     if (toState === 'ROOT_CAUSE') { this.toggleRootCauseForm(nc); return; }
     if (toState === 'CORRECTIVE_ACTION') { this.toggleCorrectiveForm(nc); return; }
     if (toState === 'REJECTED') { this.toggleRejectForm(nc); return; }
+    if (toState === 'VERIFY') { this.toggleVerifyForm(nc); return; }
+    if (toState === 'REOPEN') { this.toggleReopenForm(nc); return; }
 
-    // Transitions without a form (e.g. CLOSED, back to UNDER_INVESTIGATION)
     this.ncService.transitionNc(nc.id_nc, toState, {}).subscribe({
       next: () => this.loadNcs(),
       error: (err) => this.listError = err.error?.detail || 'Something went wrong while updating this NC.'

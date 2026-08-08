@@ -2,7 +2,7 @@
   "routes": [
     {
       "path": "",
-      "title": "NEXUS N3 — Qualité",
+      "title": "NEXUS N3 — Quality",
       "iconType": "",
       "icon": "",
       "class": "",
@@ -14,7 +14,7 @@
     },
     {
       "path": "/admin/quality/dashboard",
-      "title": "Tableau de bord",
+      "title": "Dashboard",
       "iconType": "feather",
       "icon": "activity",
       "class": "",
@@ -26,7 +26,7 @@
     },
     {
       "path": "/admin/quality/nc-form",
-      "title": "Nouvelle NC",
+      "title": "New Non-Conformance",
       "iconType": "feather",
       "icon": "plus-circle",
       "class": "",
@@ -38,7 +38,7 @@
     },
     {
       "path": "/admin/quality/nc-list",
-      "title": "Liste des NC",
+      "title": "NC List",
       "iconType": "feather",
       "icon": "list",
       "class": "",
@@ -50,7 +50,7 @@
     },
     {
       "path": "/admin/quality/audits",
-      "title": "Audits Internes",
+      "title": "Internal Audits",
       "iconType": "feather",
       "icon": "check-square",
       "class": "",

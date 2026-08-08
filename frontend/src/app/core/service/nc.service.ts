@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs/internal/Observable';
 
 @Injectable({ providedIn: 'root' })
 export class NcService {
@@ -55,6 +56,9 @@ export class NcService {
 
   assignNc(id: string, operatorId: string, dueDate: string) {
     return this.http.post(`${this.apiUrl}/${id}/assign`, { operator_id: operatorId, due_date: dueDate });
+  }
+  getNc(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/ncs/${id}`);
   }
   
 }

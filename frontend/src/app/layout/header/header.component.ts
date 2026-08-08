@@ -10,6 +10,7 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ConfigService } from '@config';
 import { UnsubscribeOnDestroyAdapter } from '@shared';
 import { LanguageService, InConfiguration, AuthService } from '@core';
@@ -18,6 +19,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { FeatherIconsComponent } from '@shared/components/feather-icons/feather-icons.component';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 
 interface SlaAlert {
   id: number;
@@ -41,10 +43,23 @@ interface SlaAlertView extends SlaAlert {
   imports: [
     RouterLink,
     NgClass,
+    FormsModule,
     MatButtonModule,
     FeatherIconsComponent,
     MatMenuModule,
     NgScrollbar,
+  ],
+  animations: [
+    trigger('badgePop', [
+      transition(':increment', [
+        style({ transform: 'scale(1.4)' }),
+        animate('200ms ease-out', style({ transform: 'scale(1)' }))
+      ]),
+      transition(':decrement', [
+        style({ transform: 'scale(0.8)' }),
+        animate('200ms ease-out', style({ transform: 'scale(1)' }))
+      ])
+    ])
   ]
 })
 export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnInit, OnDestroy {
@@ -66,9 +81,9 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
   unreadCount = 0;
   confirmingDismissId: number | null = null;
   recentlyDismissedId: number | null = null;
+  sortOrder: 'newest' | 'oldest' | 'breached-first' | 'warning-first' = 'newest';
 
   private readonly API = 'http://localhost:8000';
-
   private eventSource?: EventSource;
   private undoTimeoutHandle?: ReturnType<typeof setTimeout>;
 
@@ -132,35 +147,29 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
       this.flagvalue = val.map((element) => element.flag);
     }
 
-    // ─── Charge SLA immédiatement, puis écoute le flux temps réel (SSE) ───
     this.refreshAlerts();
     this.connectToSlaStream();
   }
 
-  // ─── Temps réel (SSE) ───
-
+  // ─── SSE real-time ───
   private connectToSlaStream(): void {
     this.eventSource = new EventSource(`${this.API}/sla/stream`);
-
     this.eventSource.onmessage = (event) => {
       this.ngZone.run(() => {
         try {
-          const payload = JSON.parse(event.data);
-          console.log('[SLA] événement temps réel reçu :', payload);
+          JSON.parse(event.data);
           this.refreshAlerts();
         } catch (e) {
-          console.error('[SLA] payload SSE invalide :', e);
+          console.error('[SLA] invalid SSE payload:', e);
         }
       });
     };
-
     this.eventSource.onerror = () => {
-      console.warn('[SLA] connexion SSE interrompue, reconnexion automatique en cours…');
+      console.warn('[SLA] SSE connection lost, reconnecting...');
     };
   }
 
   // ─── Data loading ───
-
   private refreshAlerts(): void {
     this.loadAlerts();
     this.loadUnreadCount();
@@ -169,7 +178,8 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
   private loadAlerts(): void {
     this.http.get<{ alerts: SlaAlert[] }>(`${this.API}/sla/alerts`).subscribe({
       next: (data) => {
-        this.slaAlerts = (data.alerts || []).map((a) => this.toView(a));
+        const mapped = (data.alerts || []).map((a) => this.toView(a));
+        this.slaAlerts = this.applySort(mapped);
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -201,6 +211,33 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
     };
   }
 
+  private applySort(alerts: SlaAlertView[]): SlaAlertView[] {
+    return [...alerts].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+
+      switch (this.sortOrder) {
+        case 'newest':
+          return dateB - dateA;
+        case 'oldest':
+          return dateA - dateB;
+        case 'breached-first':
+          if (a.alert_type === b.alert_type) return dateB - dateA;
+          return a.alert_type === 'BREACHED' ? -1 : 1;
+        case 'warning-first':
+          if (a.alert_type === b.alert_type) return dateB - dateA;
+          return a.alert_type === 'WARNING' ? -1 : 1;
+        default:
+          return dateB - dateA;
+      }
+    });
+  }
+
+  onSortChange(): void {
+    this.slaAlerts = this.applySort(this.slaAlerts);
+    this.cdr.markForCheck();
+  }
+
   private timeAgo(date: Date): string {
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -214,10 +251,12 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
 
   markAllAsRead(): void {
     if (this.unreadCount === 0) return;
+
     this.http.post(`${this.API}/sla/alerts/read-all`, {}).subscribe({
       next: () => {
-        this.slaAlerts = this.slaAlerts.map((a) => ({ ...a, is_read: true }));
+        this.slaAlerts = this.slaAlerts.map(a => ({ ...a, is_read: true }));
         this.unreadCount = 0;
+        this.cdr.markForCheck();
       },
       error: (err) => console.error('[SLA] read-all error:', err)
     });
@@ -229,6 +268,7 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
         next: () => {
           alert.is_read = true;
           this.unreadCount = Math.max(0, this.unreadCount - 1);
+          this.cdr.markForCheck();
         },
         error: (err) => console.error('[SLA] patch read error:', err)
       });
@@ -254,9 +294,10 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
       next: () => {
         this.confirmingDismissId = null;
         const wasUnread = !alert.is_read;
-        this.slaAlerts = this.slaAlerts.filter((a) => a.id !== alert.id);
+        this.slaAlerts = this.slaAlerts.filter(a => a.id !== alert.id);
         if (wasUnread) this.unreadCount = Math.max(0, this.unreadCount - 1);
         this.showUndo(alert.id);
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('[SLA] delete error:', err);
@@ -274,6 +315,7 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
     clearTimeout(this.undoTimeoutHandle);
     this.undoTimeoutHandle = setTimeout(() => {
       if (this.recentlyDismissedId === alertId) this.recentlyDismissedId = null;
+      this.cdr.markForCheck();
     }, 5000);
   }
 
@@ -294,11 +336,9 @@ export class HeaderComponent extends UnsubscribeOnDestroyAdapter implements OnIn
 
   callFullscreen() {
     if (!this.isFullScreen) {
-      if (this.docElement?.requestFullscreen != null) {
-        this.docElement?.requestFullscreen();
-      }
+      this.docElement?.requestFullscreen?.();
     } else {
-      document.exitFullscreen();
+      document.exitFullscreen?.();
     }
     this.isFullScreen = !this.isFullScreen;
   }

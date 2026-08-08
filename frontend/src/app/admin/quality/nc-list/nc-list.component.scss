@@ -616,3 +616,73 @@
     justify-content: flex-end;
   }
 }
+/* ─── Manager verification panel ─── */
+.verify-panel {
+  .verify-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .btn-validate {
+    background: var(--qc-green, #16a34a);
+    color: #ffffff;
+    height: 38px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover:not(:disabled) {
+      background: #15803d;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+    }
+
+    .btn-icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .verify-or {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--qc-ink-soft, #64748b);
+    align-self: center;
+    padding: 0 4px;
+  }
+
+  .reject-reassign-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex: 1 1 320px;
+    align-items: flex-end;
+    padding: 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+  }
+}
+.inline-panel.assign-inline {
+  .section-label {
+    flex-basis: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--qc-ink-soft, #64748b);
+    margin-bottom: 4px;
+  }
+}
