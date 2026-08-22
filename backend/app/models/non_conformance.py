@@ -21,3 +21,5 @@ class NonConformance(SQLModel, table=True):
     closed_at: Optional[datetime] = None
     is_deleted: bool = Field(default=False)
     deleted_at: Optional[datetime] = None
+    predicted_delay_risk: Optional[bool] = None
+    predicted_delay_proba: Optional[float] = None
