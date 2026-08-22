@@ -131,21 +131,15 @@ export class SidebarComponent
       this.renderer.addClass(this.document.body, 'ls-closed');
     } else {
       this.renderer.removeClass(this.document.body, 'ls-closed');
-    }
-  }
-  mouseHover() {
-    const body = this.elementRef.nativeElement.closest('body');
-    if (body.classList.contains('submenu-closed')) {
-      this.renderer.addClass(this.document.body, 'side-closed-hover');
+      this.renderer.removeClass(this.document.body, 'side-closed');
       this.renderer.removeClass(this.document.body, 'submenu-closed');
     }
   }
+  mouseHover() {
+    // Disabled collapse hover logic since sidebar is permanently open
+  }
   mouseOut() {
-    const body = this.elementRef.nativeElement.closest('body');
-    if (body.classList.contains('side-closed-hover')) {
-      this.renderer.removeClass(this.document.body, 'side-closed-hover');
-      this.renderer.addClass(this.document.body, 'submenu-closed');
-    }
+    // Disabled collapse hover logic since sidebar is permanently open
   }
   logout() {
     this.subs.sink = this.authService.logout().subscribe((res) => {

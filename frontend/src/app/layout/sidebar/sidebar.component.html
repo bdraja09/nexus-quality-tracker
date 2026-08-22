@@ -1,15 +1,6 @@
 <div>
   <!-- Left Sidebar -->
   <aside id="leftsidebar" class="sidebar" (mouseenter)="mouseHover()" (mouseleave)="mouseOut()">
-    <!-- Sidebar Brand -->
-    <div class="sidebar-brand">
-      <div class="sidebar-logo-wrap">
-        <img src="assets/images/kuber-logo.png" class="sidebar-logo-img" alt="KUBER" />
-      </div>
-      <div class="sidebar-brand-text">
-        <span class="sidebar-brand-name">KUBER</span>
-      </div>
-    </div>
 
     <!-- Menu -->
     <div class="menu">
@@ -17,23 +8,21 @@
         <ul class="list">
           <!-- User Panel -->
           <li class="sidebar-user-panel">
-            <div class="user-panel">
-              <div class="image">
-                <div class="user-avatar-initials">
-                  {{ userFullName ? userFullName[0] : 'U' }}
-                </div>
+            <div class="user-panel-inner">
+              <div class="user-avatar-initials">
+                {{ userFullName ? userFullName[0] : 'U' }}
               </div>
-            </div>
-            <div class="profile-usertitle">
-              <div class="sidebar-userpic-name">{{ userFullName }}</div>
-              <div class="profile-usertitle-job">
-                <span class="role-badge"
-                  [class.badge-manager]="userType === 'Manager'"
-                  [class.badge-operator]="userType === 'Operator'"
-                  [class.badge-auditor]="userType === 'Auditor'"
-                  [class.badge-admin]="userType === 'Admin'">
-                  {{ userType }}
-                </span>
+              <div class="profile-usertitle">
+                <div class="sidebar-userpic-name">{{ userFullName }}</div>
+                <div class="profile-usertitle-job">
+                  <span class="role-badge"
+                    [class.badge-manager]="userType === 'Manager'"
+                    [class.badge-operator]="userType === 'Operator'"
+                    [class.badge-auditor]="userType === 'Auditor'"
+                    [class.badge-admin]="userType === 'Admin'">
+                    {{ userType }}
+                  </span>
+                </div>
               </div>
             </div>
           </li>

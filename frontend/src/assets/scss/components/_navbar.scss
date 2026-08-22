@@ -390,61 +390,18 @@ nav.navbar {
   }
 }
 .side-closed {
-  .sidebar {
-    /*margin-left: -300px;*/
-    width: 60px;
-    .menu {
-      .list {
-        li {
-          .menu-toggle {
-            &:before,
-            &:after {
-              content: "";
-            }
-          }
-          span {
-            display: none;
-          }
-          a {
-            line-height: 1rem;
-            &:after {
-              top: calc(50% - 7px);
-            }
-          }
-        }
+  @media (min-width: 1025px) {
+    .sidebar {
+      width: 260px !important;
+      .menu .list li {
+        span { display: block !important; }
       }
     }
-  }
-  &.submenu-closed {
-    .sidebar .menu .list {
-      li .ml-menu,
-      .header {
-        display: none !important;
-      }
-    }
-    .navbar-header {
-      width: 60px;
-      .navbar-brand {
-        padding-right: 0;
-        padding-left: 0;
-        margin: 0;
-        span {
-          display: none;
-        }
-      }
-    }
-    .sidebar-user-panel {
-      display: none;
+    section.content {
+      margin-left: 260px !important;
     }
   }
 
-  section.content {
-    margin-left: 60px;
-  }
-
-  // .navbar-brand {
-  //   margin-left: 30px;
-  // }
   &.side-closed-hover {
     .sidebar {
       width: 260px;

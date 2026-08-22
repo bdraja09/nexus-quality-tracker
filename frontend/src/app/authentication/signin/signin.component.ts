@@ -44,7 +44,7 @@ export class SigninComponent
   ngOnInit() {
     this.authForm = this.formBuilder.group({
       username: ['manager@nexus.com', Validators.required],
-      password: ['password123', Validators.required],
+      password: ['Password123!', Validators.required],
     });
   }
 
@@ -54,15 +54,15 @@ export class SigninComponent
 
   managerSet() {
     this.authForm.get('username')?.setValue('manager@nexus.com');
-    this.authForm.get('password')?.setValue('password123');
+    this.authForm.get('password')?.setValue('Password123!');
   }
   operatorSet() {
     this.authForm.get('username')?.setValue('operator@nexus.com');
-    this.authForm.get('password')?.setValue('password123');
+    this.authForm.get('password')?.setValue('Password123!');
   }
   auditorSet() {
     this.authForm.get('username')?.setValue('auditor@nexus.com');
-    this.authForm.get('password')?.setValue('password123');
+    this.authForm.get('password')?.setValue('Password123!');
   }
 
   onSubmit() {

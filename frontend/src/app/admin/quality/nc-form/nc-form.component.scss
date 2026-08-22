@@ -14,10 +14,12 @@
   margin-bottom: 20px;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11.5px;
+  line-height: 1;
 
   a {
     color: var(--qc-ink-soft, #64748b);
     text-decoration: none;
+    line-height: 1;
     &:hover { color: var(--qc-blue, #2563eb); }
   }
 
@@ -25,11 +27,18 @@
     width: 12px;
     height: 12px;
     color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: text-bottom;
+    position: relative;
+    top: 0.5px;
   }
 
   .crumb-current {
     color: var(--qc-ink, #1e293b);
     font-weight: 600;
+    line-height: 1;
   }
 }
 
@@ -44,12 +53,14 @@
     letter-spacing: -0.01em;
     color: var(--qc-ink, #1e293b);
     margin: 0 0 6px;
+    line-height: 1.2;
   }
 
   .page-subtitle {
     font-size: 13px;
     color: var(--qc-ink-soft, #64748b);
     margin: 0;
+    line-height: 1.4;
   }
 }
 
@@ -86,6 +97,7 @@
   letter-spacing: 0.07em;
   color: var(--qc-ink-soft, #64748b);
   margin-bottom: 16px;
+  line-height: 1;
 }
 
 .full-width {
@@ -124,7 +136,7 @@
   }
 }
 
-// ─── Evidence block (QNC-01) ───
+// ─── Evidence block ───
 .evidence-block {
   margin-top: 4px;
 }
@@ -145,6 +157,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    line-height: 1;
 
     .optional-tag {
       font-family: 'IBM Plex Sans', sans-serif;
@@ -156,12 +169,14 @@
       background: #f1f5f9;
       padding: 1px 7px;
       border-radius: 999px;
+      line-height: 1;
     }
   }
 
   .field-block-hint {
     font-size: 11.5px;
     color: var(--qc-ink-soft, #64748b);
+    line-height: 1.4;
   }
 }
 
@@ -177,6 +192,7 @@
   background: #f8fafc;
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
+  line-height: 1;
 
   &:hover,
   &.dragging {
@@ -188,11 +204,18 @@
     width: 22px;
     height: 22px;
     color: var(--qc-ink-soft, #64748b);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    position: relative;
+    top: -0.5px;
   }
 
   .dropzone-text {
     font-size: 12.5px;
     color: var(--qc-ink-soft, #64748b);
+    line-height: 1.2;
 
     strong {
       color: var(--qc-blue, #2563eb);
@@ -218,12 +241,19 @@
   border: 1px solid var(--qc-line, #e2e8f0);
   border-radius: 8px;
   background: #ffffff;
+  line-height: 1;
 
   .file-icon {
     width: 15px;
     height: 15px;
     color: var(--qc-ink-soft, #64748b);
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    position: relative;
+    top: -0.5px;
   }
 
   .file-name {
@@ -233,6 +263,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1;
   }
 
   .file-size {
@@ -240,10 +271,11 @@
     font-size: 11px;
     color: var(--qc-ink-soft, #64748b);
     flex-shrink: 0;
+    line-height: 1;
   }
 
   .file-remove {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 22px;
@@ -254,10 +286,15 @@
     cursor: pointer;
     border-radius: 6px;
     flex-shrink: 0;
+    vertical-align: middle;
 
     i-feather {
       width: 14px;
       height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
     }
 
     &:hover {
@@ -277,7 +314,7 @@
 
 .severity-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   width: 100%;
   padding: 10px 12px;
@@ -287,6 +324,7 @@
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
+  line-height: 1;
 
   &:hover {
     border-color: #cbd5e1;
@@ -297,8 +335,11 @@
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    margin-top: 4px;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
   }
 
   .row-text {
@@ -306,6 +347,7 @@
     flex-direction: column;
     gap: 1px;
     flex: 1;
+    justify-content: center;
   }
 
   .row-label {
@@ -313,6 +355,7 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--qc-ink, #1e293b);
+    line-height: 1.2;
   }
 
   .row-desc {
@@ -324,8 +367,11 @@
   .row-check {
     width: 15px;
     height: 15px;
-    margin-top: 2px;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
   }
 
   &.sev-low .row-indicator { background: var(--qc-blue-soft, #93c5fd); }
@@ -367,22 +413,26 @@
     letter-spacing: 0.06em;
     color: var(--qc-ink-soft, #64748b);
     margin-bottom: 10px;
+    line-height: 1;
   }
 
   .preview-row {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     padding: 4px 0;
     font-size: 12.5px;
+    line-height: 1;
 
     .preview-key {
       color: var(--qc-ink-soft, #64748b);
+      line-height: 1;
     }
 
     .preview-val {
       color: var(--qc-ink, #1e293b);
       font-weight: 600;
+      line-height: 1;
 
       &.mono {
         font-family: 'IBM Plex Mono', monospace;
@@ -404,6 +454,7 @@
     background: #e2e8f0;
     padding: 2px 8px;
     border-radius: 999px;
+    line-height: 1;
 
     &.status-created {
       color: #ffffff;
@@ -426,11 +477,18 @@
   border-radius: 8px;
   border: 1px solid;
   font-size: 12.5px;
+  line-height: 1;
 
   .banner-icon {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    position: relative;
+    top: -0.5px;
   }
 
   &.banner-error {
@@ -464,16 +522,28 @@
   justify-content: center;
   gap: 8px;
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
+  line-height: 1;
+  vertical-align: middle;
 
   .btn-spinner {
     width: 15px;
     height: 15px;
     animation: spin 1s linear infinite;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
   }
 
   .btn-arrow {
     width: 15px;
     height: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
   }
 }
 
@@ -482,6 +552,7 @@
   text-align: center;
   font-size: 11px;
   color: var(--qc-ink-soft, #64748b);
+  line-height: 1.4;
 }
 
 @keyframes spin {
@@ -507,4 +578,14 @@
   .page-head .page-title {
     font-size: 22px;
   }
+}
+
+// ─── Global i-feather alignment fix ───
+i-feather {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
 }

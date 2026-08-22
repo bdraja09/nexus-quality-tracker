@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  margin-left: 80px;   
+  margin-left: 60px;   
   padding: 24px 32px;  
   box-sizing: border-box;
   min-height: 100vh;
@@ -38,6 +38,8 @@
     color: #ffffff;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     transition: all 0.2s ease;
+    line-height: 1;
+    vertical-align: middle;
 
     &:hover {
       background: #1d4ed8;
@@ -49,6 +51,13 @@
 .btn-icon {
   width: 18px;
   height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
 }
 
 /* Banners */
@@ -64,6 +73,10 @@
     cursor: pointer;
     color: inherit;
     opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
 
     &:hover {
       opacity: 1;
@@ -72,6 +85,7 @@
     i-feather {
       width: 16px;
       height: 16px;
+      align-self: center;
     }
   }
 }
@@ -107,10 +121,12 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    align-self: center;
 
     i-feather {
       width: 22px;
       height: 22px;
+      align-self: center;
     }
 
     &.blue-bg { background: #eff6ff; color: #2563eb; }
@@ -123,6 +139,7 @@
   .metric-body {
     display: flex;
     flex-direction: column;
+    justify-content: center;
 
     .metric-label {
       font-size: 12px;
@@ -130,6 +147,7 @@
       color: var(--qc-ink-soft, #64748b);
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      line-height: 1;
     }
 
     .metric-value {
@@ -170,6 +188,8 @@
       color: var(--qc-ink-soft, #64748b);
       cursor: pointer;
       transition: all 0.15s ease;
+      line-height: 1;
+      vertical-align: middle;
 
       .tab-count {
         background: #e2e8f0;
@@ -177,6 +197,11 @@
         padding: 2px 8px;
         border-radius: 999px;
         font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+        line-height: 1;
       }
 
       &:hover {
@@ -214,6 +239,10 @@
         height: 16px;
         color: var(--qc-ink-soft, #64748b);
         pointer-events: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
       }
 
       .custom-select, .search-input {
@@ -261,6 +290,7 @@
     border-top-color: var(--qc-blue, #2563eb);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    align-self: center;
   }
 }
 
@@ -281,12 +311,14 @@
     height: 48px;
     color: var(--qc-ink-soft, #64748b);
     opacity: 0.5;
+    align-self: center;
   }
 
   h3 {
     margin: 0;
     font-size: 18px;
     color: var(--qc-ink, #1e293b);
+    line-height: 1.2;
   }
 
   p {
@@ -294,6 +326,7 @@
     font-size: 14px;
     color: var(--qc-ink-soft, #64748b);
     max-width: 400px;
+    line-height: 1.4;
   }
 }
 
@@ -318,7 +351,7 @@
   .audit-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
     gap: 12px;
 
@@ -339,11 +372,20 @@
         font-size: 12px;
         font-weight: 700;
         color: var(--qc-ink, #1e293b);
+        line-height: 1;
+        vertical-align: middle;
 
         .shield-icon {
           width: 14px;
           height: 14px;
           color: var(--qc-blue, #2563eb);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          vertical-align: middle;
+          position: relative;
+          top: -0.5px;
         }
       }
 
@@ -352,6 +394,7 @@
         font-size: 16px;
         font-weight: 700;
         color: var(--qc-ink, #1e293b);
+        line-height: 1.2;
       }
 
       .dept-badge {
@@ -361,10 +404,19 @@
         font-size: 12px;
         font-weight: 500;
         color: var(--qc-ink-soft, #64748b);
+        line-height: 1;
+        vertical-align: middle;
 
         .badge-icon {
           width: 13px;
           height: 13px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          vertical-align: middle;
+          position: relative;
+          top: -0.5px;
         }
       }
     }
@@ -386,15 +438,24 @@
         gap: 6px;
         font-size: 13px;
         color: var(--qc-ink-soft, #64748b);
+        line-height: 1;
 
         .meta-icon {
           width: 14px;
           height: 14px;
           color: var(--qc-ink-soft, #64748b);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          vertical-align: middle;
+          position: relative;
+          top: -0.5px;
         }
 
         strong {
           color: var(--qc-ink, #1e293b);
+          line-height: 1;
         }
       }
     }
@@ -414,11 +475,19 @@
         letter-spacing: 0.5px;
         color: var(--qc-ink, #1e293b);
         margin-bottom: 4px;
+        line-height: 1;
 
         .summary-icon {
           width: 14px;
           height: 14px;
           color: var(--qc-blue, #2563eb);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          vertical-align: middle;
+          position: relative;
+          top: -0.5px;
         }
       }
 
@@ -453,6 +522,8 @@
       color: var(--qc-ink, #1e293b);
       cursor: pointer;
       transition: all 0.2s ease;
+      line-height: 1;
+      vertical-align: middle;
 
       &:hover {
         background: #e2e8f0;
@@ -467,6 +538,13 @@
       .chevron-icon {
         width: 14px;
         height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        vertical-align: middle;
+        position: relative;
+        top: -0.5px;
       }
     }
 
@@ -485,6 +563,8 @@
         cursor: pointer;
         transition: all 0.15s ease;
         border: 1px solid transparent;
+        line-height: 1;
+        vertical-align: middle;
 
         &.btn-add-finding {
           background: #fffbeb;
@@ -529,6 +609,7 @@
       font-size: 14px;
       font-weight: 700;
       color: var(--qc-ink, #1e293b);
+      line-height: 1.2;
     }
 
     .drawer-count {
@@ -536,6 +617,7 @@
       font-weight: 600;
       color: var(--qc-ink-soft, #64748b);
       text-transform: uppercase;
+      line-height: 1;
     }
   }
 
@@ -554,6 +636,7 @@
       border-top-color: var(--qc-blue, #2563eb);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
+      align-self: center;
     }
   }
 
@@ -570,12 +653,18 @@
       width: 18px;
       height: 18px;
       color: var(--qc-green, #16a34a);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      align-self: center;
     }
 
     p {
       margin: 0;
       font-size: 13px;
       color: var(--qc-ink-soft, #64748b);
+      line-height: 1.4;
     }
   }
 
@@ -604,12 +693,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      line-height: 1;
 
       .finding-id {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 11px;
         font-weight: 700;
         color: var(--qc-ink-soft, #64748b);
+        line-height: 1;
       }
 
       .sev-badge {
@@ -618,6 +709,7 @@
         font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
+        line-height: 1;
 
         &.sev-low { background: #f0fdf4; color: #15803d; }
         &.sev-medium, &.sev-med { background: #fffbeb; color: #b45309; }
@@ -635,6 +727,7 @@
 
     .finding-bottom {
       margin-top: 4px;
+      line-height: 1;
 
       .escalated-status {
         display: inline-flex;
@@ -645,10 +738,19 @@
         background: #f0fdf4;
         padding: 4px 10px;
         border-radius: 6px;
+        line-height: 1;
+        vertical-align: middle;
 
         .link-icon {
           width: 13px;
           height: 13px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          vertical-align: middle;
+          position: relative;
+          top: -0.5px;
         }
 
         .view-nc-link {
@@ -672,6 +774,8 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.15s ease;
+        line-height: 1;
+        vertical-align: middle;
 
         &:hover {
           background: #fee2e2;
@@ -680,6 +784,13 @@
         .escalate-icon {
           width: 13px;
           height: 13px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          vertical-align: middle;
+          position: relative;
+          top: -0.5px;
         }
       }
     }
@@ -726,10 +837,18 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      line-height: 1;
 
       .modal-icon {
         width: 18px;
         height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        vertical-align: middle;
+        position: relative;
+        top: -0.5px;
 
         &.text-success { color: var(--qc-green, #16a34a); }
         &.text-amber { color: var(--qc-amber, #d97706); }
@@ -777,6 +896,7 @@
         font-size: 12.5px;
         font-weight: 600;
         color: var(--qc-ink, #1e293b);
+        line-height: 1.2;
       }
 
       .form-control {
@@ -803,6 +923,7 @@
     .form-row {
       display: flex;
       gap: 12px;
+      align-items: flex-end;
     }
 
     .finding-preview-box {
@@ -820,6 +941,7 @@
           font-family: 'IBM Plex Mono', monospace;
           font-size: 11px;
           color: var(--qc-ink-soft, #64748b);
+          line-height: 1;
         }
       }
 
@@ -827,6 +949,7 @@
         margin: 0;
         font-size: 13px;
         color: var(--qc-ink, #1e293b);
+        line-height: 1.4;
       }
     }
 
@@ -845,6 +968,7 @@
         font-weight: 600;
         color: var(--qc-ink-soft, #64748b);
         cursor: pointer;
+        line-height: 1;
 
         &:hover {
           background: #f8fafc;
@@ -861,6 +985,7 @@
         font-weight: 600;
         cursor: pointer;
         transition: background 0.15s ease;
+        line-height: 1;
 
         &:hover:not(:disabled) {
           background: #1d4ed8;
@@ -894,4 +1019,395 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+// ─── Global i-feather alignment fix ───
+i-feather {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALIGNMENT FIX v2 — nc-list + audits
+   Remplace le patch précédent à la fin de chaque .scss
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Search bar icon — centrage parfait vertical ─── */
+.search-box {
+  position: relative;
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+  }
+
+  .search-clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    line-height: 1;
+
+    &:hover {
+      color: var(--qc-ink, #1e293b);
+      background: #f1f5f9;
+    }
+
+    app-feather-icons,
+    i-feather {
+      width: 14px;
+      height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+/* ─── Filter inputs icons (audits page) ─── */
+.select-wrapper,
+.search-wrapper {
+  position: relative;
+
+  .select-icon,
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--qc-ink-soft, #64748b);
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* ─── Global feather icons — inline-flex obligatoire ─── */
+app-feather-icons,
+i-feather {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  /* PAS de display:block + vertical-align sur les enfants SVG */
+}
+
+/* ─── Emoji / dot / icon alignment ─── */
+.nfc-emoji-icon,
+.resolved-icon,
+.risk-icon,
+.tag-dot,
+.live-dot,
+.pulse-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ─── Inline-flex containers with icons ─── */
+.badge-tag,
+.filter-chip,
+.tag,
+.nc-date,
+.nc-responsible,
+.dept-badge,
+.audit-id-badge,
+.metric-card,
+.kpi-card,
+.live-indicator {
+  app-feather-icons,
+  i-feather {
+    align-self: center;
+    position: relative;
+    top: -0.5px;
+  }
+}
+
+/* ─── Buttons with icons ─── */
+button,
+.btn-action,
+.findings-toggle-btn,
+.export-btn,
+.new-nc-btn,
+.new-audit-btn,
+.load-more-btn,
+.refresh-btn,
+.submit-btn {
+  app-feather-icons,
+  i-feather,
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
+    position: relative;
+    top: -0.5px;
+  }
+}
+
+/* ─── Meta / time / date items ─── */
+.meta-item,
+.time-item,
+.nc-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+
+  app-feather-icons,
+  i-feather,
+  .meta-icon,
+  .time-icon,
+  .date-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
+    flex-shrink: 0;
+    position: relative;
+    top: -0.5px;
+  }
+}
+
+/* ─── Card headings ─── */
+.nc-card-heading,
+.audit-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  app-feather-icons,
+  i-feather,
+  .badge-icon,
+  .shield-icon {
+    align-self: center;
+    vertical-align: middle;
+  }
+}
+
+/* ─── Summary / label with icons ─── */
+.summary-label,
+.field-block-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+
+  app-feather-icons,
+  i-feather,
+  .summary-icon {
+    align-self: center;
+    vertical-align: middle;
+  }
+}
+
+/* ─── Action groups ─── */
+.nc-card-actions,
+.right-actions,
+.head-actions,
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  app-feather-icons,
+  i-feather {
+    align-self: center;
+    vertical-align: middle;
+  }
+}
+
+/* ─── Form section labels ─── */
+.form-section .section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+
+  app-feather-icons,
+  i-feather {
+    align-self: center;
+    vertical-align: middle;
+  }
+}
+
+/* ─── Breadcrumb ─── */
+.crumb-sep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: text-bottom;
+  line-height: 1;
+}
+
+/* ─── User menu ─── */
+.user-item-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+
+  app-feather-icons,
+  i-feather,
+  .user-menu-icons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── SLA / Notification row icons ─── */
+.nfc-close,
+.unread-dot,
+.resolved-tag,
+.workflow-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ─── Sort bar ─── */
+.nfc-sort-bar .sort-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  align-self: center;
+  line-height: 1;
+}
+
+/* ─── Empty states ─── */
+.empty-state .empty-icon,
+.nfc-empty .nfc-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  vertical-align: middle;
+}
+
+/* ─── Finding cards ─── */
+.finding-item-card {
+  .finding-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    line-height: 1;
+  }
+
+  .escalated-status,
+  .btn-escalate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+    vertical-align: middle;
+
+    app-feather-icons,
+    i-feather,
+    .link-icon,
+    .escalate-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      align-self: center;
+      flex-shrink: 0;
+    }
+  }
+}
+
+/* ─── Modal header ─── */
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+
+  .modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Readonly fields ─── */
+.readonly-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+
+  .readonly-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Pagination ─── */
+.page-btn {
+  app-feather-icons,
+  i-feather {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    align-self: center;
+  }
+}
+
+/* ─── Control group ─── */
+.control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  vertical-align: middle;
 }

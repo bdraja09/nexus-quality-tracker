@@ -4,7 +4,8 @@ import { Observable } from 'rxjs/internal/Observable';
 
 @Injectable({ providedIn: 'root' })
 export class NcService {
-  private apiUrl = 'http://localhost:8000/nc';
+  private baseUrl = 'http://localhost:8000';
+  private apiUrl = `${this.baseUrl}/nc`;
 
   constructor(private http: HttpClient) {}
 
@@ -46,7 +47,7 @@ export class NcService {
     return this.http.post(`${this.apiUrl}/${ncId}/corrective-action`, {
       description,
       assigned_to: assignedTo,
-      due_date: dueDate // format 'YYYY-MM-DD', compatible avec le type `date` de Pydantic
+      due_date: dueDate
     });
   }
 
@@ -57,8 +58,21 @@ export class NcService {
   assignNc(id: string, operatorId: string, dueDate: string) {
     return this.http.post(`${this.apiUrl}/${id}/assign`, { operator_id: operatorId, due_date: dueDate });
   }
+
   getNc(id: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/ncs/${id}`);
+    return this.http.get(`${this.apiUrl}/${id}`);
   }
-  
+
+  reopenNc(id: string, assignedTo: string, dueDate: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/reopen`, {
+      assigned_to: assignedTo,
+      due_date: dueDate
+    });
+  }
+
+  downloadMlDataset(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/export/dataset/csv`, {
+      responseType: 'blob'
+    });
+  }
 }

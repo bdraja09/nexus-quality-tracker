@@ -6,15 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { FeatherModule } from 'angular-feather';
 
-import { AuditService, Audit, AuditFinding, AuthService } from '@core';
-
-export const DEPARTMENTS = [
-  { id: 'DEPT-PROD', name: 'Production' },
-  { id: 'DEPT-QUAL', name: 'Quality & Compliance' },
-  { id: 'DEPT-MAINT', name: 'Maintenance & Engineering' },
-  { id: 'DEPT-LOG', name: 'Logistics & Supply Chain' },
-  { id: 'DEPT-RD', name: 'Research & Development' }
-];
+import { AuditService, Audit, AuditFinding, AuthService, DepartmentService, Department } from '@core';
 
 export const AUDIT_TYPES = [
   'ISO 9001:2015 Internal Audit',
@@ -56,7 +48,7 @@ export class AuditsComponent implements OnInit {
   deptFilter = 'ALL';
   searchTerm = '';
 
-  departments = DEPARTMENTS;
+  departments: Department[] = [];
   auditTypes = AUDIT_TYPES;
   severityOptions = SEVERITY_OPTIONS;
 
@@ -94,6 +86,7 @@ export class AuditsComponent implements OnInit {
   constructor(
     private auditService: AuditService,
     private authService: AuthService,
+    private departmentService: DepartmentService,
     private fb: FormBuilder
   ) {}
 
@@ -102,13 +95,25 @@ export class AuditsComponent implements OnInit {
     const defaultAuditor = (user && user.id) ? user.id : 'USR-AUDITOR-01';
 
     this.createAuditForm = this.fb.group({
-      dept_id: ['DEPT-PROD', Validators.required],
+      dept_id: ['', Validators.required],
       audit_type: ['ISO 9001:2015 Internal Audit', Validators.required],
       auditor_id: [defaultAuditor, Validators.required],
       scheduled_date: [new Date().toISOString().substring(0, 10), Validators.required]
     });
 
+    this.loadDepartments();
     this.loadAudits();
+  }
+
+  loadDepartments(): void {
+    this.departmentService.listDepartments().subscribe({
+      next: (data) => {
+        this.departments = data;
+      },
+      error: (err) => {
+        this.error = 'Erreur chargement départements: ' + (err.error?.detail || err.message);
+      }
+    });
   }
 
   loadAudits(): void {
@@ -192,7 +197,7 @@ export class AuditsComponent implements OnInit {
     this.showCreateModal = true;
     const user = this.authService.currentUserValue;
     this.createAuditForm.reset({
-      dept_id: 'DEPT-PROD',
+      dept_id: '',
       audit_type: 'ISO 9001:2015 Internal Audit',
       auditor_id: (user && user.id) ? user.id : 'USR-AUDITOR-01',
       scheduled_date: new Date().toISOString().substring(0, 10)

@@ -11,409 +11,594 @@
       <h1 class="page-title">Non-Conformances</h1>
       <p class="page-subtitle">Every deviation, from raise to closure — ISO 9001:2015 §10.2.</p>
     </div>
-    <a mat-flat-button color="accent" routerLink="/admin/quality/nc-form" class="new-nc-btn">
-      <i-feather name="plus" class="btn-icon"></i-feather>
-      New NC
-    </a>
+    <div class="head-actions">
+      <button mat-stroked-button (click)="exportMlDataset()" [disabled]="downloading" class="export-btn">
+        <i-feather name="download" class="btn-icon"></i-feather>
+        {{ downloading ? 'Exporting…' : 'Export Non-Conformances history' }}
+      </button>
+      <a mat-flat-button color="accent" routerLink="/admin/quality/nc-form" class="new-nc-btn">
+        <i-feather name="plus" class="btn-icon"></i-feather>
+        New NC
+      </a>
+    </div>
   </div>
 
   @if (listError) {
-    <div class="form-banner banner-error page-banner">
-      <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-      <span>{{ listError }}</span>
-      <button type="button" class="banner-dismiss" (click)="dismissListError()" aria-label="Dismiss">
-        <i-feather name="x"></i-feather>
-      </button>
-    </div>
+  <div class="form-banner banner-error page-banner">
+    <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+    <span>{{ listError }}</span>
+    <button type="button" class="banner-dismiss" (click)="dismissListError()" aria-label="Dismiss">
+      <i-feather name="x"></i-feather>
+    </button>
+  </div>
   }
 
   @if (loading) {
-    <p class="loading-state">Loading…</p>
+  <p class="loading-state">Loading…</p>
   }
 
   @if (!loading) {
-    <div class="filter-bar" role="tablist" aria-label="Filter by status">
-      @for (f of stateFilters; track f.value) {
-        <button
-          type="button"
-          class="filter-chip"
-          [class.selected]="stateFilter === f.value"
-          role="tab"
-          [attr.aria-selected]="stateFilter === f.value"
-          (click)="setStateFilter(f.value)">
-          {{ f.label }}
-          <span class="filter-count">{{ stateCounts[f.value] ?? 0 }}</span>
-        </button>
+  <!-- Search and Main Filters Toolbar -->
+  <div class="nc-toolbar">
+    <div class="search-box">
+      <i-feather name="search" class="search-icon"></i-feather>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search by reference, title, operator, root cause, or keywords…"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onFilterChange()"
+      />
+      @if (searchQuery) {
+      <button type="button" class="search-clear-btn" (click)="clearSearch()" aria-label="Clear search">
+        <i-feather name="x"></i-feather>
+      </button>
       }
     </div>
 
-    <div class="nc-cards">
-      @for (nc of filteredNcs; track nc.id_nc) {
-        <article class="nc-card" [ngClass]="'sev-' + nc.severity">
-          <div class="nc-card-main">
-            <div class="nc-card-heading">
-              <span class="ref-code">{{ nc.ref_code }}</span>
-              <h3 class="nc-title">{{ nc.title }}</h3>
-            </div>
+    <div class="toolbar-actions">
+      <!-- Page Size Selector -->
+      <div class="control-group page-size-group">
+        <label class="control-label" for="pageSizeSelect">Show:</label>
+        <select
+          id="pageSizeSelect"
+          class="custom-select page-size-select"
+          [ngModel]="pageSize"
+          (ngModelChange)="onPageSizeChange($event)">
+          <option [value]="10">10 / page</option>
+          <option [value]="25">25 / page</option>
+          <option [value]="50">50 / page</option>
+          <option [value]="100">100 / page</option>
+          <option [value]="200">200 / page</option>
+          <option [value]="0">All</option>
+        </select>
+      </div>
 
-            <div class="nc-card-tags">
-              <span class="tag severity-tag" [ngClass]="'sev-' + nc.severity">
-                <span class="tag-dot"></span>{{ nc.severity }}
+      <!-- Reset button if any filter is active -->
+      @if (isAnyFilterActive) {
+      <button type="button" class="reset-filters-btn" (click)="resetFilters()">
+        <i-feather name="rotate-ccw" class="btn-icon"></i-feather>
+        Reset filters
+        <span class="active-badge">{{ activeFilterCount }}</span>
+      </button>
+      }
+    </div>
+  </div>
+
+  <!-- Secondary Filters & Sorting Controls Row -->
+  <div class="secondary-filters-bar">
+    <div class="filter-select-item">
+      <label class="filter-label">
+        <i-feather name="alert-circle" class="label-icon"></i-feather>
+        Severity:
+      </label>
+      <select class="custom-select" [(ngModel)]="severityFilter" (ngModelChange)="onFilterChange()">
+        <option value="ALL">All severities</option>
+        <option value="LOW">Low</option>
+        <option value="MEDIUM">Medium</option>
+        <option value="HIGH">High</option>
+        <option value="CRITICAL">Critical</option>
+      </select>
+    </div>
+
+    <div class="filter-select-item">
+      <label class="filter-label">
+        <i-feather name="user" class="label-icon"></i-feather>
+        Assignee:
+      </label>
+      <select class="custom-select" [(ngModel)]="assignedToFilter" (ngModelChange)="onFilterChange()">
+        <option value="ALL">All assignees</option>
+        <option value="UNASSIGNED">Unassigned</option>
+        @for (op of operators; track op.id_usr) {
+        <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-select-item">
+      <label class="filter-label">
+        <i-feather name="zap" class="label-icon"></i-feather>
+        ML Risk:
+      </label>
+      <select class="custom-select" [(ngModel)]="riskFilter" (ngModelChange)="onFilterChange()">
+        <option value="ALL">All risks</option>
+        <option value="RISK_ONLY">At delay risk only</option>
+        <option value="NO_RISK">Normal / On track</option>
+      </select>
+    </div>
+
+    <div class="filter-select-item sort-item">
+      <label class="filter-label">
+        <i-feather name="bar-chart-2" class="label-icon"></i-feather>
+        Sort by:
+      </label>
+      <select class="custom-select" [(ngModel)]="sortBy" (ngModelChange)="onFilterChange()">
+        <option value="date_desc">Newest first</option>
+        <option value="date_asc">Oldest first</option>
+        <option value="severity_desc">Highest severity</option>
+        <option value="severity_asc">Lowest severity</option>
+        <option value="ref_asc">Reference code (A-Z)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="nc-cards">
+    @for (nc of visibleNcs; track nc.id_nc) {
+    <article [id]="'nc-card-' + nc.id_nc" class="nc-card" [ngClass]="'sev-' + nc.severity" [class.is-highlighted]="isNcHighlighted(nc)">
+      <div class="nc-card-main">
+        <div class="nc-card-heading">
+          <span class="ref-code">{{ nc.ref_code }}</span>
+          <h3 class="nc-title">{{ nc.title }}</h3>
+          @if (isNcHighlighted(nc)) {
+          <span class="highlight-badge">
+            <i-feather name="target" class="badge-icon"></i-feather>
+            Selected from alert
+          </span>
+          }
+        </div>
+
+        <div class="nc-card-tags">
+          <span class="tag severity-tag" [ngClass]="'sev-' + nc.severity">
+            <span class="tag-dot"></span>{{ nc.severity }}
+          </span>
+          <span class="tag state-tag" [ngClass]="stateClass(nc.current_state)">
+            {{ stateLabel(nc.current_state) }}
+            @if (nc.predicted_delay_risk && !isTerminalState(nc.current_state)) {
+              <span class="tag risk-tag" [title]="'Predicted probability: ' + (nc.predicted_delay_proba * 100 | number:'1.0-0') + '%'">
+                <i-feather name="alert-triangle" class="risk-icon"></i-feather>
+                At risk ({{ nc.predicted_delay_proba * 100 | number:'1.0-0' }}%)
               </span>
-              <span class="tag state-tag" [ngClass]="stateClass(nc.current_state)">
-                {{ stateLabel(nc.current_state) }}
-              </span>
-              @if (nc.assigned_to) {
-                <span class="nc-responsible">
-                  <i-feather name="user" class="responsible-icon"></i-feather>
-                  {{ operatorName(nc.assigned_to) }}
-                </span>
               }
-              <span class="nc-date">
-                <i-feather name="calendar" class="date-icon"></i-feather>
-                {{ nc.raised_at | date:'MMM d, y' }}
-              </span>
-            </div>
-          </div>
+          </span>
+          @if (nc.assigned_to) {
+          <span class="nc-responsible">
+            <i-feather name="user" class="responsible-icon"></i-feather>
+            {{ operatorName(nc.assigned_to) }}
+          </span>
+          }
+          <span class="nc-date">
+            <i-feather name="calendar" class="date-icon"></i-feather>
+            {{ nc.raised_at | date:'MMM d, y' }}
+          </span>
+        </div>
+      </div>
 
-          <div class="nc-card-actions">
-            @for (action of availableActions(nc.current_state); track action) {
-              <button
-                mat-stroked-button
-                (click)="doTransition(nc, action)"
-                class="action-btn"
-                [class.is-active]="(action === 'ASSIGNED' && assigningNcId === nc.id_nc) ||
+      <div class="nc-card-actions">
+        @for (action of availableActions(nc.current_state); track action) {
+        <button mat-stroked-button (click)="doTransition(nc, action)" class="action-btn" [class.is-active]="(action === 'ASSIGNED' && assigningNcId === nc.id_nc) ||
                                     (action === 'ROOT_CAUSE' && rootCauseNcId === nc.id_nc) ||
                                     (action === 'CORRECTIVE_ACTION' && correctiveNcId === nc.id_nc) ||
                                     (action === 'REJECTED' && rejectingNcId === nc.id_nc) ||
                                     (action === 'VERIFY' && verifyNcId === nc.id_nc) ||
                                     (action === 'REOPEN' && reopenNcId === nc.id_nc)">
-                {{ actionLabel(action) }}
-              </button>
+          {{ actionLabel(action) }}
+        </button>
+        }
+        @if (canDelete) {
+        <button mat-icon-button color="warn" [attr.aria-label]="'Delete NC ' + nc.ref_code" (click)="deleteNc(nc)">
+          <mat-icon>delete</mat-icon>
+        </button>
+        }
+      </div>
+
+      <!-- Assign -->
+      @if (assigningNcId === nc.id_nc) {
+      <div class="inline-panel assign-inline">
+        <div class="field">
+          <label>Operator *</label>
+          <select [(ngModel)]="selectedOperator" name="selectedOperator">
+            <option value="" disabled>Select an operator</option>
+            @for (op of operators; track op.id_usr) {
+            <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
             }
-            @if (canDelete) {
-              <button
-                mat-icon-button
-                color="warn"
-                [attr.aria-label]="'Delete NC ' + nc.ref_code"
-                (click)="deleteNc(nc)">
-                <mat-icon>delete</mat-icon>
-              </button>
+          </select>
+        </div>
+        <div class="field">
+          <label>Due date</label>
+          <input type="date" [(ngModel)]="dueDate" name="dueDate">
+        </div>
+        @if (assignError) {
+        <div class="form-banner banner-error inline-banner">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ assignError }}</span>
+        </div>
+        }
+        <div class="inline-actions">
+          <button mat-flat-button color="accent" [disabled]="!selectedOperator"
+            (click)="confirmAssign(nc)">Assign</button>
+          <button mat-stroked-button (click)="toggleAssignForm(nc)">Cancel</button>
+        </div>
+      </div>
+      }
+
+      <!-- Root cause -->
+      @if (rootCauseNcId === nc.id_nc) {
+      <div class="inline-panel root-cause-panel">
+        <div class="form-section">
+          <span class="section-label">Root cause identification</span>
+          <div class="field">
+            <label>Category (5M) *</label>
+            <select [(ngModel)]="rootCauseCategory" name="rootCauseCategory">
+              <option value="" disabled>Select a category</option>
+              @for (cat of rootCauseCategories; track cat.value) {
+              <option [value]="cat.value">{{ cat.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field field-wide">
+            <label>Description *</label>
+            <textarea [(ngModel)]="rootCauseDescription" name="rootCauseDescription" rows="2"
+              placeholder="Describe the identified cause…"></textarea>
+          </div>
+        </div>
+
+        @if (rootCauseError) {
+        <div class="form-banner banner-error inline-banner">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ rootCauseError }}</span>
+        </div>
+        }
+
+        <div class="inline-actions">
+          <button mat-flat-button color="accent" [disabled]="!rootCauseFormValid || rootCauseSubmitting"
+            (click)="confirmRootCause(nc)">
+            @if (rootCauseSubmitting) {
+            <i-feather name="loader" class="btn-spinner"></i-feather>
             }
+            {{ rootCauseSubmitting ? 'Saving…' : 'Save Root Cause' }}
+          </button>
+          <button mat-stroked-button (click)="toggleRootCauseForm(nc)">Cancel</button>
+        </div>
+      </div>
+      }
+
+      <!-- Corrective action -->
+      @if (correctiveNcId === nc.id_nc) {
+      <div class="inline-panel corrective-panel">
+        <div class="form-section">
+          <span class="section-label">Corrective action</span>
+
+          @if (nc.assigned_to) {
+          <div class="field">
+            <label class="label-meta">Responsable (NC)</label>
+            <div class="readonly-field">
+              <i-feather name="user" class="readonly-icon"></i-feather>
+              <span>{{ operatorName(nc.assigned_to) }}</span>
+            </div>
+          </div>
+          }
+
+          <div class="field field-wide">
+            <label>Description *</label>
+            <textarea [(ngModel)]="correctiveDescription" name="correctiveDescription" rows="2"
+              placeholder="Describe the proposed corrective action…"></textarea>
+          </div>
+          <div class="field">
+            <label>Assignee — corrective action *</label>
+            <select [(ngModel)]="correctiveAssignedTo" name="correctiveAssignedTo">
+              <option value="" disabled>Select an assignee</option>
+              @for (op of operators; track op.id_usr) {
+              <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Due date *</label>
+            <input type="date" [(ngModel)]="correctiveDueDate" name="correctiveDueDate">
+          </div>
+        </div>
+
+        @if (correctiveError) {
+        <div class="form-banner banner-error inline-banner">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ correctiveError }}</span>
+        </div>
+        }
+
+        <div class="inline-actions">
+          <button mat-flat-button color="accent" [disabled]="!correctiveFormValid || correctiveSubmitting"
+            (click)="confirmCorrectiveAction(nc)">
+            @if (correctiveSubmitting) {
+            <i-feather name="loader" class="btn-spinner"></i-feather>
+            }
+            {{ correctiveSubmitting ? 'Saving…' : 'Propose Action' }}
+          </button>
+          <button mat-stroked-button (click)="toggleCorrectiveForm(nc)">Cancel</button>
+        </div>
+      </div>
+      }
+
+      <!-- Manager verification (CORRECTIVE_ACTION) -->
+      @if (verifyNcId === nc.id_nc) {
+      <div class="inline-panel verify-panel">
+        <div class="form-section">
+          <span class="section-label">Corrective action review</span>
+
+          <div class="field field-wide">
+            <label class="label-meta">Proposed action</label>
+            <div class="readonly-field">
+              <i-feather name="file-text" class="readonly-icon"></i-feather>
+              @if (loadingDetailMap[nc.id_nc]) {
+              <span>Loading…</span>
+              } @else {
+              <span>
+                {{ getNcDetail(nc.id_nc)?.corrective_action_description
+                || getNcDetail(nc.id_nc)?.action_description
+                || getNcDetail(nc.id_nc)?.description
+                || nc.corrective_action_description
+                || '—' }}
+              </span>
+              }
+            </div>
           </div>
 
-          <!-- Assign -->
-          @if (assigningNcId === nc.id_nc) {
-            <div class="inline-panel assign-inline">
+          <div class="field">
+            <label class="label-meta">Assigned to</label>
+            <div class="readonly-field">
+              <i-feather name="user" class="readonly-icon"></i-feather>
+              <span>{{ operatorName(getNcDetail(nc.id_nc)?.corrective_assigned_to || nc.corrective_assigned_to ||
+                nc.assigned_to) }}</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label-meta">Due date</label>
+            <div class="readonly-field">
+              <i-feather name="calendar" class="readonly-icon"></i-feather>
+              <span>{{ (getNcDetail(nc.id_nc)?.corrective_due_date || nc.corrective_due_date || nc.due_date) | date:'MMM
+                d, y' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <span class="section-label">Manager decision</span>
+
+          <div class="verify-actions-row">
+            <button mat-flat-button class="btn-validate" [disabled]="verifySubmitting" (click)="confirmValidate(nc)">
+              <i-feather name="check-circle" class="btn-icon"></i-feather>
+              Validate & Close
+            </button>
+
+            <span class="verify-or">or</span>
+
+            <div class="reject-reassign-fields">
               <div class="field">
-                <label>Operator *</label>
-                <select [(ngModel)]="selectedOperator" name="selectedOperator">
-                  <option value="" disabled>Select an operator</option>
+                <label>Re-assign to *</label>
+                <select [(ngModel)]="verifyReassignTo" name="verifyReassignTo">
+                  <option value="" disabled>Select operator</option>
                   @for (op of operators; track op.id_usr) {
-                    <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
+                  <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
                   }
                 </select>
               </div>
               <div class="field">
-                <label>Due date</label>
-                <input type="date" [(ngModel)]="dueDate" name="dueDate">
+                <label>New due date *</label>
+                <input type="date" [(ngModel)]="verifyDueDate" name="verifyDueDate">
               </div>
-              @if (assignError) {
-                <div class="form-banner banner-error inline-banner">
-                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-                  <span>{{ assignError }}</span>
-                </div>
-              }
-              <div class="inline-actions">
-                <button mat-flat-button color="accent" [disabled]="!selectedOperator" (click)="confirmAssign(nc)">Assign</button>
-                <button mat-stroked-button (click)="toggleAssignForm(nc)">Cancel</button>
-              </div>
-            </div>
-          }
-
-          <!-- Root cause -->
-          @if (rootCauseNcId === nc.id_nc) {
-            <div class="inline-panel root-cause-panel">
-              <div class="form-section">
-                <span class="section-label">Root cause identification</span>
-                <div class="field">
-                  <label>Category (5M) *</label>
-                  <select [(ngModel)]="rootCauseCategory" name="rootCauseCategory">
-                    <option value="" disabled>Select a category</option>
-                    @for (cat of rootCauseCategories; track cat.value) {
-                      <option [value]="cat.value">{{ cat.label }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="field field-wide">
-                  <label>Description *</label>
-                  <textarea
-                    [(ngModel)]="rootCauseDescription"
-                    name="rootCauseDescription"
-                    rows="2"
-                    placeholder="Describe the identified cause…"></textarea>
-                </div>
-              </div>
-
-              @if (rootCauseError) {
-                <div class="form-banner banner-error inline-banner">
-                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-                  <span>{{ rootCauseError }}</span>
-                </div>
-              }
-
-              <div class="inline-actions">
-                <button
-                  mat-flat-button
-                  color="accent"
-                  [disabled]="!rootCauseFormValid || rootCauseSubmitting"
-                  (click)="confirmRootCause(nc)">
-                  @if (rootCauseSubmitting) {
-                    <i-feather name="loader" class="btn-spinner"></i-feather>
-                  }
-                  {{ rootCauseSubmitting ? 'Saving…' : 'Save Root Cause' }}
-                </button>
-                <button mat-stroked-button (click)="toggleRootCauseForm(nc)">Cancel</button>
-              </div>
-            </div>
-          }
-
-          <!-- Corrective action -->
-          @if (correctiveNcId === nc.id_nc) {
-            <div class="inline-panel corrective-panel">
-              <div class="form-section">
-                <span class="section-label">Corrective action</span>
-
-                @if (nc.assigned_to) {
-                  <div class="field">
-                    <label class="label-meta">Responsable (NC)</label>
-                    <div class="readonly-field">
-                      <i-feather name="user" class="readonly-icon"></i-feather>
-                      <span>{{ operatorName(nc.assigned_to) }}</span>
-                    </div>
-                  </div>
-                }
-
-                <div class="field field-wide">
-                  <label>Description *</label>
-                  <textarea
-                    [(ngModel)]="correctiveDescription"
-                    name="correctiveDescription"
-                    rows="2"
-                    placeholder="Describe the proposed corrective action…"></textarea>
-                </div>
-                <div class="field">
-                  <label>Assignee — corrective action *</label>
-                  <select [(ngModel)]="correctiveAssignedTo" name="correctiveAssignedTo">
-                    <option value="" disabled>Select an assignee</option>
-                    @for (op of operators; track op.id_usr) {
-                      <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Due date *</label>
-                  <input type="date" [(ngModel)]="correctiveDueDate" name="correctiveDueDate">
-                </div>
-              </div>
-
-              @if (correctiveError) {
-                <div class="form-banner banner-error inline-banner">
-                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-                  <span>{{ correctiveError }}</span>
-                </div>
-              }
-
-              <div class="inline-actions">
-                <button
-                  mat-flat-button
-                  color="accent"
-                  [disabled]="!correctiveFormValid || correctiveSubmitting"
-                  (click)="confirmCorrectiveAction(nc)">
-                  @if (correctiveSubmitting) {
-                    <i-feather name="loader" class="btn-spinner"></i-feather>
-                  }
-                  {{ correctiveSubmitting ? 'Saving…' : 'Propose Action' }}
-                </button>
-                <button mat-stroked-button (click)="toggleCorrectiveForm(nc)">Cancel</button>
-              </div>
-            </div>
-          }
-
-          <!-- Manager verification (CORRECTIVE_ACTION) -->
-          @if (verifyNcId === nc.id_nc) {
-            <div class="inline-panel verify-panel">
-              <div class="form-section">
-                <span class="section-label">Corrective action review</span>
-
-                <div class="field field-wide">
-                  <label class="label-meta">Proposed action</label>
-                  <div class="readonly-field">
-                    <i-feather name="file-text" class="readonly-icon"></i-feather>
-                    @if (loadingDetailMap[nc.id_nc]) {
-                      <span>Loading…</span>
-                    } @else {
-                      <span>{{ getNcDetail(nc.id_nc).corrective_action_description || nc.corrective_action_description || '—' }}</span>
-                    }
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label class="label-meta">Assigned to</label>
-                  <div class="readonly-field">
-                    <i-feather name="user" class="readonly-icon"></i-feather>
-                    <span>{{ operatorName(getNcDetail(nc.id_nc).corrective_assigned_to || nc.corrective_assigned_to || nc.assigned_to) }}</span>
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label class="label-meta">Due date</label>
-                  <div class="readonly-field">
-                    <i-feather name="calendar" class="readonly-icon"></i-feather>
-                    <span>{{ (getNcDetail(nc.id_nc).corrective_due_date || nc.corrective_due_date || nc.due_date) | date:'MMM d, y' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-section">
-                <span class="section-label">Manager decision</span>
-
-                <div class="verify-actions-row">
-                  <button
-                    mat-flat-button
-                    class="btn-validate"
-                    [disabled]="verifySubmitting"
-                    (click)="confirmValidate(nc)">
-                    <i-feather name="check-circle" class="btn-icon"></i-feather>
-                    Validate & Close
-                  </button>
-
-                  <span class="verify-or">or</span>
-
-                  <div class="reject-reassign-fields">
-                    <div class="field">
-                      <label>Re-assign to *</label>
-                      <select [(ngModel)]="verifyReassignTo" name="verifyReassignTo">
-                        <option value="" disabled>Select operator</option>
-                        @for (op of operators; track op.id_usr) {
-                          <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
-                        }
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label>New due date *</label>
-                      <input type="date" [(ngModel)]="verifyDueDate" name="verifyDueDate">
-                    </div>
-                    <div class="field field-wide">
-                      <label>Rejection reason *</label>
-                      <textarea
-                        [(ngModel)]="verifyRejectReason"
-                        name="verifyRejectReason"
-                        rows="2"
-                        placeholder="Why is this action not valid?"></textarea>
-                    </div>
-                    <button
-                      mat-stroked-button
-                      color="warn"
-                      [disabled]="!verifyReassignTo || !verifyDueDate || !verifyRejectReason.trim() || verifySubmitting"
-                      (click)="confirmRejectAndReassign(nc)">
-                      Not valid — Re-assign
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              @if (verifyError) {
-                <div class="form-banner banner-error inline-banner">
-                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-                  <span>{{ verifyError }}</span>
-                </div>
-              }
-
-              <div class="inline-actions">
-                <button mat-stroked-button (click)="toggleVerifyForm(nc)">Cancel</button>
-              </div>
-            </div>
-          }
-
-          <!-- Reopen (CLOSED → ASSIGNED) -->
-          @if (reopenNcId === nc.id_nc) {
-            <div class="inline-panel assign-inline">
-              <div class="form-section">
-                <span class="section-label">Reopen non-conformance</span>
-                <p style="margin:0 0 8px; font-size:12px; color:#64748b;">
-                  This NC will be reassigned and will go through the workflow again.
-                </p>
-                <div class="field">
-                  <label>Re-assign to *</label>
-                  <select [(ngModel)]="reopenOperator" name="reopenOperator">
-                    <option value="" disabled>Select an operator</option>
-                    @for (op of operators; track op.id_usr) {
-                      <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
-                    }
-                  </select>
-                </div>
-                <div class="field">
-                  <label>New due date *</label>
-                  <input type="date" [(ngModel)]="reopenDueDate" name="reopenDueDate">
-                </div>
-              </div>
-
-              @if (reopenError) {
-                <div class="form-banner banner-error inline-banner">
-                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-                  <span>{{ reopenError }}</span>
-                </div>
-              }
-
-              <div class="inline-actions">
-                <button
-                  mat-flat-button
-                  color="accent"
-                  [disabled]="!reopenOperator || !reopenDueDate || reopenSubmitting"
-                  (click)="confirmReopen(nc)">
-                  @if (reopenSubmitting) {
-                    <i-feather name="loader" class="btn-spinner"></i-feather>
-                  }
-                  {{ reopenSubmitting ? 'Reopening…' : 'Reopen NC' }}
-                </button>
-                <button mat-stroked-button (click)="toggleReopenForm(nc)">Cancel</button>
-              </div>
-            </div>
-          }
-
-          <!-- Reject -->
-          @if (rejectingNcId === nc.id_nc) {
-            <div class="inline-panel reject-inline">
               <div class="field field-wide">
                 <label>Rejection reason *</label>
-                <textarea
-                  [(ngModel)]="rejectReason"
-                  name="rejectReason"
-                  rows="2"
-                  placeholder="Why is this NC being rejected?"></textarea>
+                <textarea [(ngModel)]="verifyRejectReason" name="verifyRejectReason" rows="2"
+                  placeholder="Why is this action not valid?"></textarea>
               </div>
-              @if (rejectError) {
-                <div class="form-banner banner-error inline-banner">
-                  <i-feather name="alert-triangle" class="banner-icon"></i-feather>
-                  <span>{{ rejectError }}</span>
-                </div>
-              }
-              <div class="inline-actions">
-                <button mat-flat-button color="warn" [disabled]="!rejectReason.trim()" (click)="confirmReject(nc)">Reject</button>
-                <button mat-stroked-button (click)="toggleRejectForm(nc)">Cancel</button>
-              </div>
+              <button mat-stroked-button color="warn"
+                [disabled]="!verifyReassignTo || !verifyDueDate || !verifyRejectReason.trim() || verifySubmitting"
+                (click)="confirmRejectAndReassign(nc)">
+                Not valid — Re-assign
+              </button>
             </div>
-          }
-        </article>
+          </div>
+        </div>
+
+        @if (verifyError) {
+        <div class="form-banner banner-error inline-banner">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ verifyError }}</span>
+        </div>
+        }
+
+        <div class="inline-actions">
+          <button mat-stroked-button (click)="toggleVerifyForm(nc)">Cancel</button>
+        </div>
+      </div>
       }
+
+      <!-- Reopen (CLOSED → ASSIGNED) -->
+      @if (reopenNcId === nc.id_nc) {
+      <div class="inline-panel assign-inline">
+        <div class="form-section">
+          <span class="section-label">Reopen non-conformance</span>
+          <p style="margin:0 0 8px; font-size:12px; color:#64748b;">
+            This NC will be reassigned and will go through the workflow again.
+          </p>
+          <div class="field">
+            <label>Re-assign to *</label>
+            <select [(ngModel)]="reopenOperator" name="reopenOperator">
+              <option value="" disabled>Select an operator</option>
+              @for (op of operators; track op.id_usr) {
+              <option [value]="op.id_usr">{{ op.first_name }} {{ op.last_name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>New due date *</label>
+            <input type="date" [(ngModel)]="reopenDueDate" name="reopenDueDate">
+          </div>
+        </div>
+
+        @if (reopenError) {
+        <div class="form-banner banner-error inline-banner">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ reopenError }}</span>
+        </div>
+        }
+
+        <div class="inline-actions">
+          <button mat-flat-button color="accent" [disabled]="!reopenOperator || !reopenDueDate || reopenSubmitting"
+            (click)="confirmReopen(nc)">
+            @if (reopenSubmitting) {
+            <i-feather name="loader" class="btn-spinner"></i-feather>
+            }
+            {{ reopenSubmitting ? 'Reopening…' : 'Reopen NC' }}
+          </button>
+          <button mat-stroked-button (click)="toggleReopenForm(nc)">Cancel</button>
+        </div>
+      </div>
+      }
+
+      <!-- Reject -->
+      @if (rejectingNcId === nc.id_nc) {
+      <div class="inline-panel reject-inline">
+        <div class="field field-wide">
+          <label>Rejection reason *</label>
+          <textarea [(ngModel)]="rejectReason" name="rejectReason" rows="2"
+            placeholder="Why is this NC being rejected?"></textarea>
+        </div>
+        @if (rejectError) {
+        <div class="form-banner banner-error inline-banner">
+          <i-feather name="alert-triangle" class="banner-icon"></i-feather>
+          <span>{{ rejectError }}</span>
+        </div>
+        }
+        <div class="inline-actions">
+          <button mat-flat-button color="warn" [disabled]="!rejectReason.trim()"
+            (click)="confirmReject(nc)">Reject</button>
+          <button mat-stroked-button (click)="toggleRejectForm(nc)">Cancel</button>
+        </div>
+      </div>
+      }
+    </article>
+    }
+  </div>
+
+  <!-- Pagination Controls Bar -->
+  @if (totalPages > 1 || totalItems > 0) {
+  <div class="pagination-container">
+    <div class="pagination-info">
+      Showing <strong>{{ startIndex }}</strong>–<strong>{{ endIndex }}</strong> of <strong>{{ totalItems }}</strong> NCs
     </div>
 
-    @if (filteredNcs.length === 0) {
-      <div class="empty-state">
-        <i-feather name="inbox" class="empty-icon"></i-feather>
-        <p>{{ ncs.length === 0 ? 'No non-conformances yet.' : 'No records match this filter.' }}</p>
-      </div>
+    @if (totalPages > 1 && pageSize > 0) {
+    <nav class="pagination-nav" aria-label="Non-conformances pagination">
+      <!-- First Page -->
+      <button
+        type="button"
+        class="page-btn page-step-btn"
+        [disabled]="currentPage === 1"
+        (click)="setPage(1)"
+        title="First page"
+        aria-label="First page">
+        <i-feather name="chevrons-left"></i-feather>
+      </button>
+
+      <!-- Previous Page -->
+      <button
+        type="button"
+        class="page-btn page-step-btn"
+        [disabled]="currentPage === 1"
+        (click)="prevPage()"
+        title="Previous page"
+        aria-label="Previous page">
+        <i-feather name="chevron-left"></i-feather>
+      </button>
+
+      <!-- Page Numbers -->
+      @for (p of pageNumbers; track $index) {
+        @if (p === '...') {
+          <span class="page-ellipsis">…</span>
+        } @else {
+          <button
+            type="button"
+            class="page-btn page-num-btn"
+            [class.active]="currentPage === p"
+            (click)="setPage(p)">
+            {{ p }}
+          </button>
+        }
+      }
+
+      <!-- Next Page -->
+      <button
+        type="button"
+        class="page-btn page-step-btn"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()"
+        title="Next page"
+        aria-label="Next page">
+        <i-feather name="chevron-right"></i-feather>
+      </button>
+
+      <!-- Last Page -->
+      <button
+        type="button"
+        class="page-btn page-step-btn"
+        [disabled]="currentPage === totalPages"
+        (click)="setPage(totalPages)"
+        title="Last page"
+        aria-label="Last page">
+        <i-feather name="chevrons-right"></i-feather>
+      </button>
+    </nav>
     }
+
+    <div class="pagination-size-select">
+      <label for="bottomPageSize">Per page:</label>
+      <select
+        id="bottomPageSize"
+        class="custom-select-sm"
+        [ngModel]="pageSize"
+        (ngModelChange)="onPageSizeChange($event)">
+        <option [value]="10">10</option>
+        <option [value]="25">25</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+        <option [value]="200">200</option>
+        <option [value]="0">All</option>
+      </select>
+    </div>
+  </div>
+  }
+
+  @if (visibleNcs.length === 0) {
+  <div class="empty-state">
+    <i-feather name="search" class="empty-icon"></i-feather>
+    <h3>No non-conformances found</h3>
+    @if (ncs.length === 0) {
+      <p>No non-conformances have been logged in the system yet.</p>
+      <a mat-flat-button color="accent" routerLink="/admin/quality/nc-form" class="new-nc-btn" style="margin-top: 12px;">
+        <i-feather name="plus" class="btn-icon"></i-feather>
+        Log first NC
+      </a>
+    } @else {
+      <p>No non-conformances match your current search query or active filters.</p>
+      @if (isAnyFilterActive) {
+      <button mat-stroked-button (click)="resetFilters()" style="margin-top: 12px; border-radius: 8px;">
+        <i-feather name="rotate-ccw" class="btn-icon" style="margin-right: 6px; width: 14px; height: 14px;"></i-feather>
+        Reset all filters & search
+      </button>
+      }
+    }
+  </div>
+  }
   }
 </div>

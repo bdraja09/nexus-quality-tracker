@@ -70,8 +70,6 @@
     "@angular-eslint/template-parser": "19.0.0",
     "@angular/cli": "~19.0.2",
     "@angular/compiler-cli": "^19.0.1",
-    "@types/ckeditor__ckeditor5-build-classic": "^37.0.4",
-    "@types/ckeditor__ckeditor5-watchdog": "^37.0.3",
     "@types/d3": "^7.4.3",
     "@types/echarts": "^4.9.22",
     "@types/jasmine": "~5.1.5",

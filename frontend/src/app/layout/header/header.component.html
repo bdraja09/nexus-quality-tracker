@@ -10,13 +10,7 @@
       </a>
     </div>
     <div class="collapse navbar-collapse" [ngClass]="isNavbarCollapsed ? '' : 'show'">
-      <ul class="float-start collapse-menu-icon">
-        <li class="collapseBtn">
-          <button mat-icon-button (click)="callSidemenuCollapse()" class="sidemenu-collapse nav-notification-icons">
-            <app-feather-icons [icon]="'menu'" [class]="'header-icon'"></app-feather-icons>
-          </button>
-        </li>
-      </ul>
+
       <ul class="nav navbar-nav navbar-right">
         <!-- Full Screen -->
         <li class="fullscreen">
@@ -49,7 +43,9 @@
           </mat-menu>
         </li>
 
-        <!-- SLA Notifications -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!--  SLA Alerts (cloche) — style urgent (rouge/orange)             -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
         <li class="nav-item btnNotification" ngbDropdown>
           <button mat-icon-button [matMenuTriggerFor]="notificationMenu" class="nav-notification-icons"
             [class.has-breach]="hasBreachedNotification">
@@ -64,16 +60,14 @@
 
           <mat-menu #notificationMenu="matMenu" class="nfc-menu" (closed)="cancelDismiss()">
             <div class="nfc-header">
-              <h5 class="mb-0">Notifications</h5>
-              @if (unreadCount > 0) {
-                <a class="nfc-mark-as-read"
-                   (click)="$event.stopPropagation(); markAllAsRead()">
-                  Mark all as read
-                </a>
-              }
+              <h5 class="mb-0">Alerts</h5>
+              <a class="nfc-mark-as-read"
+                [class.is-disabled]="unreadCount === 0"
+                (click)="unreadCount > 0 ? markAllAsRead() : null">
+                Mark all as read
+              </a>
             </div>
 
-            <!-- Sort bar -->
             <div class="nfc-sort-bar" (click)="$event.stopPropagation()">
               <app-feather-icons [icon]="'arrow-down'" [class]="'sort-icon'"></app-feather-icons>
               <select class="nfc-sort-select" [(ngModel)]="sortOrder" (change)="onSortChange()">
@@ -109,34 +103,138 @@
                         [ngClass]="notification.is_read ? 'msg-read' : 'msg-unread'"
                         [class.msg-resolved]="notification.resolved_at">
 
-                        <span class="nfc-avatar">
-                          <app-feather-icons [icon]="'file-text'" [class]="'nfc-avatar-icon'"></app-feather-icons>
-                          <span class="nfc-badge-icon" [ngClass]="notification.color">
-                            <app-feather-icons
-                              [icon]="notification.alert_type === 'BREACHED' ? 'alert-octagon' : 'clock'">
-                            </app-feather-icons>
-                          </span>
+                        <span class="nfc-avatar" [ngClass]="notification.color">
+                          <span class="nfc-emoji-icon">{{ notification.alert_type === 'BREACHED' ? '🚨' : '⚠️' }}</span>
                         </span>
 
                         <span class="menu-info">
-                          <span class="menu-title">{{ notification.message }}</span>
+                          <span class="menu-title">
+                            <span class="nc-code-pill">{{ notification.nc_id }}</span>
+                            <span class="nfc-text">{{ notification.alert_type === 'BREACHED' ? 'SLA Breached (>5d) — Action required' : 'SLA Warning — Due within 24h' }}</span>
+                          </span>
                           <span class="menu-desc">
-                            <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
-                            {{ notification.time }}
+                            <span class="time-item">
+                              <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
+                              <span>{{ notification.time }}</span>
+                            </span>
                             @if (notification.resolved_at) {
-                              <span class="resolved-tag">Resolved</span>
+                              <span class="resolved-tag">
+                                <span class="resolved-icon">✓</span>
+                                <span>Resolved</span>
+                              </span>
                             }
                           </span>
                         </span>
 
                         <span class="nfc-row-end">
                           @if (!notification.is_read) {
-                            <span class="unread-dot"></span>
+                            <span class="unread-dot" title="Unread notification"></span>
                           }
                           <span class="nfc-close"
                             [class.confirming]="confirmingDismissId === notification.id"
-                            (click)="dismissAlert($event, notification)">
+                            (click)="dismissAlert($event, notification)"
+                            [title]="confirmingDismissId === notification.id ? 'Confirm deletion' : 'Dismiss alert'">
                             @if (confirmingDismissId === notification.id) {
+                              <app-feather-icons [icon]="'check'" [class]="'user-menu-icons'"></app-feather-icons>
+                            } @else {
+                              <app-feather-icons [icon]="'trash-2'" [class]="'user-menu-icons'"></app-feather-icons>
+                            }
+                          </span>
+                        </span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </ng-scrollbar>
+            </div>
+
+            <div class="nfc-footer">
+              <a class="nfc-read-all" routerLink="/admin/quality/nc-list">View all NCs</a>
+            </div>
+          </mat-menu>
+        </li>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!--  Workflow Notifications (mail) — style soft (bleu/gris)        -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <li class="nav-item btnWorkflow" ngbDropdown>
+          <button mat-icon-button [matMenuTriggerFor]="workflowMenu" class="nav-notification-icons"
+            [class.has-workflow-unread]="workflowUnreadCount > 0">
+            <app-feather-icons [icon]="'mail'" [class]="'header-icon'"></app-feather-icons>
+            @if (workflowUnreadCount > 0) {
+              <span class="label-count bg-blue" [@badgePop]="workflowUnreadCount">
+                {{ workflowUnreadCount > 9 ? '9+' : workflowUnreadCount }}
+              </span>
+            }
+          </button>
+
+          <mat-menu #workflowMenu="matMenu" class="nfc-menu nfc-workflow-menu" (closed)="cancelWorkflowDismiss()">
+            <div class="nfc-header nfc-workflow-header">
+              <h5 class="mb-0">Notifications</h5>
+              @if (workflowUnreadCount > 0) {
+                <a class="nfc-mark-as-read"
+                   (click)="$event.stopPropagation(); markAllWorkflowAsRead()">
+                  Mark all as read
+                </a>
+              }
+            </div>
+
+            @if (wfRecentlyDismissedId !== null) {
+              <div class="nfc-undo-banner">
+                <span>Notification dismissed</span>
+                <a (click)="$event.stopPropagation(); undoWorkflowDismiss()">Undo</a>
+              </div>
+            }
+
+            <div class="nfc-dropdown">
+              <ng-scrollbar style="height: 350px" visibility="hover">
+                <div class="noti-list header-menu">
+                  <div class="menu">
+                    @if (workflowNotifications.length === 0) {
+                      <div class="nfc-empty">
+                        <app-feather-icons [icon]="'inbox'" [class]="'nfc-empty-icon nfc-empty-workflow'"></app-feather-icons>
+                        <p>No notifications</p>
+                        <span class="nfc-empty-sub">You're all caught up</span>
+                      </div>
+                    }
+
+                    @for (n of workflowNotifications; track n.id) {
+                      <button mat-menu-item
+                        (click)="onWorkflowClick(n)"
+                        [ngClass]="n.is_read ? 'msg-read' : 'msg-unread'"
+                        class="workflow-row">
+
+                        <span class="nfc-avatar workflow-avatar" [style.background]="n.bgColor" [style.border-color]="n.iconColor + '33'">
+                          <app-feather-icons [icon]="n.icon" [class]="'workflow-icon'" [style.color]="n.iconColor"></app-feather-icons>
+                        </span>
+
+                        <span class="menu-info">
+                          <span class="menu-title">
+                            <span class="nc-code-pill workflow-pill" [style.background]="n.bgColor" [style.color]="n.iconColor">
+                              {{ n.ref_code || n.nc_id || '—' }}
+                            </span>
+                            <span class="nfc-text">{{ n.title }}</span>
+                          </span>
+                          <span class="menu-desc workflow-desc">
+                            <span class="time-item">
+                              <app-feather-icons [icon]="'clock'" [class]="'time-icon'"></app-feather-icons>
+                              <span>{{ n.time }}</span>
+                            </span>
+                          </span>
+                          @if (n.message) {
+                            <span class="workflow-message">{{ n.message }}</span>
+                          }
+                        </span>
+
+                        <span class="nfc-row-end">
+                          @if (!n.is_read) {
+                            <span class="unread-dot workflow-unread-dot" title="Unread notification"></span>
+                          }
+                          <span class="nfc-close"
+                            [class.confirming]="wfConfirmingDismissId === n.id"
+                            (click)="dismissWorkflow($event, n)"
+                            [title]="wfConfirmingDismissId === n.id ? 'Confirm deletion' : 'Dismiss notification'">
+                            @if (wfConfirmingDismissId === n.id) {
                               <app-feather-icons [icon]="'check'" [class]="'user-menu-icons'"></app-feather-icons>
                             } @else {
                               <app-feather-icons [icon]="'trash-2'" [class]="'user-menu-icons'"></app-feather-icons>

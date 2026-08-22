@@ -163,25 +163,11 @@ export class MainLayoutComponent
 
     //------------ set logo color end----------------
 
-    //------------ set sidebar collapse start----------------
-    if (localStorage.getItem('collapsed_menu')) {
-      if (localStorage.getItem('collapsed_menu') === 'true') {
-        this.renderer.addClass(this.document.body, 'side-closed');
-        this.renderer.addClass(this.document.body, 'submenu-closed');
-      }
-    } else {
-      if (this.config.layout.sidebar.collapsed == true) {
-        this.renderer.addClass(this.document.body, 'side-closed');
-        this.renderer.addClass(this.document.body, 'submenu-closed');
-        localStorage.setItem('collapsed_menu', 'true');
-      } else {
-        this.renderer.removeClass(this.document.body, 'side-closed');
-        this.renderer.removeClass(this.document.body, 'submenu-closed');
-        localStorage.setItem('collapsed_menu', 'false');
-      }
-    }
-
-    //------------ set sidebar collapse end----------------
+    //------------ set sidebar collapse start (Always Expanded) ----------------
+    this.renderer.removeClass(this.document.body, 'side-closed');
+    this.renderer.removeClass(this.document.body, 'submenu-closed');
+    localStorage.setItem('collapsed_menu', 'false');
+    //------------ set sidebar collapse end ----------------
   }
 
   setRTLSettings() {

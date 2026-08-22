@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Document   : _general.scss
  *  Author     : RedStar Template
  *  Description: This scss file for all common style classes
@@ -59,9 +59,14 @@ dl {
 
 section {
   &.content {
-    margin: 35px 27px 0 260px;
-    min-height: calc(100vh - 76px);
-    @include mix.transition(0.5s);
+    margin: 60px 0 0 260px;
+    min-height: calc(100vh - 60px);
+    @include mix.transition(0.3s);
+
+    @media (max-width: 1024px) {
+      margin-left: 0 !important;
+    }
+
     .content-block {
       padding: 25px 0px 0px 25px;
     }
