@@ -1,16 +1,16 @@
 """
-Seed des données de référence : organisation, départements, comptes utilisateurs.
+seed_constants.py — source de vérité unique pour les IDs d'organisation,
+départements et opérateurs utilisés par TOUS les scripts de seed
+(seed_org.py, seed_nc_test_data.py, seed_1000_ncs.py, ...).
 
+Pourquoi ce fichier existe : ces IDs étaient dupliqués indépendamment dans
+chaque script de seed. Un dept_id invalide ("DEPT-PROD", n'appartenant à
+aucune des listes dupliquées) s'est déjà retrouvé dans les données de
+production de test -- signe que les copies avaient divergé quelque part.
+En important ces constantes depuis un seul endroit, il devient impossible
+qu'un script de seed utilise un dept_id ou un user_id que seed_org.py n'a
+pas réellement créé en base.
 """
-import bcrypt
-from sqlmodel import Session
-from sqlalchemy import text
-
-from app.database import engine
-from app.models.departement import Department
-from app.models.user import User
-
-BCRYPT_COST = 12  # minimum imposé par la spec (§9.4)
 
 ORG_ID = "226org0000"
 ORG_NAME = "Nexus N3 Industries"
@@ -22,7 +22,9 @@ DEPARTMENTS = [
     ("226dept0003", "Logistique & Supply Chain"),
     ("226dept0004", "Ressources Humaines"),
 ]
+DEPARTMENT_IDS = [d[0] for d in DEPARTMENTS]
 
+# (email, password, first_name, last_name, role, dept_id)
 USERS = [
     ("manager@nexus.com",   "Password123!", "Jean",   "Manager",   "Manager",  "226dept0000"),
     ("operator1@nexus.com", "Password123!", "Alice",  "Operateur", "Operator", "226dept0000"),
@@ -31,64 +33,22 @@ USERS = [
     ("admin@nexus.com",     "Password123!", "Root",   "Admin",     "Admin",    "226dept0000"),
 ]
 
+MANAGER_ID = "226usr0000"
+OPERATORS = ["226usr0001", "226usr0002"]
 
-def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt(rounds=BCRYPT_COST)).decode()
+# Couplage opérateur <-> département d'appartenance. Dérivé automatiquement
+# de USERS plutôt que ré-écrit à la main dans chaque script de seed NC --
+# c'est ce couplage qui donne à dept_id sa valeur prédictive (un opérateur
+# traite en priorité les NC de son propre département).
+OPERATOR_HOME_DEPT = {
+    f"226usr{i:04d}": dept_id
+    for i, (_, _, _, _, role, dept_id) in enumerate(USERS)
+    if role == "Operator"
+}
 
-
-def resolve_org_table_name(session: Session) -> str:
-    """Trouve le vrai nom de table référencé par la contrainte FK
-    departments.org_id, plutôt que de supposer 'organisation' ou
-    'organization'."""
-    row = session.execute(text("""
-        SELECT ccu.table_name
-        FROM information_schema.table_constraints tc
-        JOIN information_schema.constraint_column_usage ccu
-          ON tc.constraint_name = ccu.constraint_name
-         AND tc.table_schema = ccu.table_schema
-        WHERE tc.table_name = 'departments'
-          AND tc.constraint_type = 'FOREIGN KEY'
-          AND tc.constraint_name LIKE '%org_id%'
-    """)).first()
-    if not row:
-        raise RuntimeError(
-            "Impossible de résoudre la contrainte FK departments.org_id — "
-            "vérifiez qu'alembic upgrade head a bien été appliqué."
-        )
-    return row[0]
-
-
-def main() -> None:
-    with Session(engine) as session:
-        org_table = resolve_org_table_name(session)
-        print(f"→ Table organisation détectée en base : '{org_table}'")
-
-        session.execute(
-            text(f'INSERT INTO "{org_table}" (id_org, name) VALUES (:id_org, :name)'),
-            {"id_org": ORG_ID, "name": ORG_NAME},
-        )
-
-        for dept_id, name in DEPARTMENTS:
-            session.add(Department(id_dept=dept_id, org_id=ORG_ID, name=name))
-
-        for i, (email, password, first_name, last_name, role, dept_id) in enumerate(USERS):
-            session.add(User(
-                id_usr=f"226usr{i:04d}",
-                email=email,
-                password=hash_password(password),
-                first_name=first_name,
-                last_name=last_name,
-                role=role,
-                departement_id=dept_id,
-            ))
-
-        session.commit()
-
-    print(f"✓ 1 organisation, {len(DEPARTMENTS)} départements, {len(USERS)} comptes créés.\n")
-    print("Identifiants de connexion :")
-    for email, password, *_ in USERS:
-        print(f"  {email} / {password}")
-
-
-if __name__ == "__main__":
-    main()
+assert set(OPERATOR_HOME_DEPT) == set(OPERATORS), (
+    "OPERATORS et OPERATOR_HOME_DEPT ont divergé -- vérifiez USERS ci-dessus."
+)
+assert all(dept_id in DEPARTMENT_IDS for dept_id in OPERATOR_HOME_DEPT.values()), (
+    "Un opérateur pointe vers un dept_id absent de DEPARTMENTS."
+)

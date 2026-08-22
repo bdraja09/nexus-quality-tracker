@@ -9,7 +9,6 @@ from app.services.sla_broadcaster import broadcaster
 
 # ISO 9001:2015 §10.2 — le seuil réel du KPI, calculé depuis raised_at.
 # Distinct de NonConformance.due_date (engagement d'assignation, QNC-02) :
-# une NC jamais assignée n'a pas de due_date mais reste soumise à ce seuil.
 SLA_TARGET_DAYS = 5
 SLA_WARNING_WINDOW = timedelta(hours=24)
 
@@ -25,7 +24,7 @@ def check_sla_and_create_alerts(session: Session) -> dict:
     stmt = select(NonConformance).where(
         NonConformance.current_state.not_in([
             NCState.CLOSED.value,
-            NCState.REJECTED.value
+            NCState.REJECTED.value,
         ]),
         NonConformance.is_deleted == False
     )
@@ -83,6 +82,7 @@ def _upsert_alert(session: Session, nc_id: str, alert_type: str, stats: dict) ->
     assigned_to = nc.assigned_to if nc else None
 
     broadcaster.publish({
+        "event": "sla_alert",
         "nc_id": nc_id,
         "alert_type": alert_type,
         "assigned_to": assigned_to,
@@ -226,6 +226,7 @@ def resolve_alerts_for_nc(session: Session, nc_id: str) -> int:
 
     if alerts:
         broadcaster.publish({
+            "event": "sla_resolved",
             "nc_id": nc_id,
             "alert_type": "RESOLVED",
             "created_at": now.isoformat()

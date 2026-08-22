@@ -9,3 +9,4 @@ from .corrective_action import CorrectiveAction
 from .audit import Audit
 from .audit_finding import AuditFinding
 from .sla_alert import SlaAlert
+from .notification import Notification
