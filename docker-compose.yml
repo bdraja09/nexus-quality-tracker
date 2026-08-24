@@ -1,10 +1,10 @@
-version: "3.9"
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+      provenance: false
+      sbom: false
     container_name: kuber-backend
     ports:
       - "8000:8000"
@@ -12,6 +12,8 @@ services:
       - ./backend:/app          
     environment:
       - PYTHONUNBUFFERED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   
     networks:
       - app-network
 
@@ -19,12 +21,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
+      provenance: false
+      sbom: false
     container_name: kuber-frontend
     ports:
       - "4200:4200"
     volumes:
-      - ./frontend:/app           
+      - ./frontend:/app         
       - /app/node_modules       
+    
     depends_on:
       - backend
     networks:

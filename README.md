@@ -11,6 +11,7 @@ Projet 3 du programme d'internat *Nexus 4.0* — réf. `NEX-P3-QUALITY-2026`
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Angular](https://img.shields.io/badge/Angular-19-DD0031?logo=angular&logoColor=white)
 ![SQLModel](https://img.shields.io/badge/SQLModel-ORM-informational)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![License](https://img.shields.io/badge/status-en%20développement-yellow)
 
 </div>
@@ -20,8 +21,10 @@ Projet 3 du programme d'internat *Nexus 4.0* — réf. `NEX-P3-QUALITY-2026`
 ## Sommaire
 
 - [Contexte](#contexte)
+- [Fonctionnalités](#fonctionnalités)
 - [Architecture](#architecture)
 - [Cycle de vie d'une non-conformité](#cycle-de-vie-dune-non-conformité)
+- [Alertes SLA](#alertes-sla)
 - [Modèle de données](#modèle-de-données)
 - [Stack technique](#stack-technique)
 - [Structure du projet](#structure-du-projet)
@@ -38,7 +41,22 @@ La clause **10.2** de la norme ISO 9001:2015 impose de réagir aux non-conformit
 
 Le module a un double rôle :
 1. **Outil opérationnel** pour les responsables qualité au quotidien
-2. **Source de données d'entraînement** pour le module IA prédictif (P5), qui apprend à anticiper les non-conformités à risque de dépassement de délai
+2. **Source de données d'entraînement** pour la prédiction de risque de dépassement de délai (voir [Fonctionnalités](#fonctionnalités))
+
+---
+
+## Fonctionnalités
+
+- **Non-conformités** — création, machine à états (cf. cycle de vie ci-dessous), historique complet des transitions
+- **Audits** — planification, constats, escalade d'un constat en NC formelle
+- **Authentification** — JWT (hachage bcrypt)
+- **Alertes SLA en temps réel** — flux **SSE**, remplace l'ancien système par polling
+- **Notifications in-app** — système générique (nouvelle NC assignée, changement d'état, etc.)
+- **Gestion des départements & organisations**
+- **Export des non-conformités** (`export_router.py`)
+- **Dashboard** — indicateurs et KPI qualité
+- **Prédiction du risque de dépassement de délai** 
+- **Environnement de développement conteneurisé** — Docker Compose, hot-reload frontend + backend
 
 ---
 
@@ -46,17 +64,20 @@ Le module a un double rôle :
 
 ```mermaid
 graph TD
-    A[Angular — Formulaires, dashboard] -->|HTTP + JWT| B[FastAPI — Routes & validation]
+    A[Angular — Formulaires, dashboard, alertes] -->|HTTP + JWT| B[FastAPI — Routes & validation]
+    A -->|SSE| I[Flux d'alertes SLA temps réel]
     B --> C[Services — Machine à états, logique métier]
     C --> D[SQLModel — ORM]
     D --> E[(PostgreSQL)]
     F[Alembic] -.versionne le schéma.-> D
     F -.applique les migrations.-> E
     G[Job SLA — cron 24h] -->|lecture| E
-    G -->|alerte| H[Assigné + Manager]
+    G -->|push| I
+    C --> J[Service de prédiction de délai — ML]
+    J -.entraîné sur.-> E
 ```
 
-Angular consomme l'API FastAPI, protégée par JWT. FastAPI délègue la logique métier à une couche de services contenant la machine à états, qui persiste via SQLModel dans PostgreSQL. Alembic gère l'évolution du schéma dans le temps. Un job planifié vérifie chaque jour les délais de traitement et déclenche des alertes SLA.
+Angular consomme l'API FastAPI, protégée par JWT, et reçoit les alertes SLA via un flux SSE plutôt que par polling. FastAPI délègue la logique métier à une couche de services contenant la machine à états, qui persiste via SQLModel dans PostgreSQL. Alembic gère l'évolution du schéma dans le temps. Un job planifié vérifie chaque jour les délais de traitement et pousse les alertes vers le flux SSE. Un service de prédiction ML estime, à partir de l'historique, le risque qu'une NC dépasse son délai.
 
 ---
 
@@ -76,7 +97,26 @@ stateDiagram-v2
     REJECTED --> [*]
 ```
 
-Chaque transition est validée par la machine à états et journalisée dans `nc_events` (timestamp, acteur, état précédent/suivant), formant l'historique immuable utilisé pour le calcul du KPI et l'entraînement du modèle IA (P5).
+Chaque transition est validée par la machine à états et journalisée dans `nc_events` (timestamp, acteur, état précédent/suivant), formant l'historique immuable utilisé pour le calcul du KPI et l'entraînement du modèle de prédiction de risque.
+
+---
+
+## Alertes SLA
+
+Le suivi du délai de clôture (objectif : **< 5 jours**, cf. [Contexte](#contexte)) est assuré par un job planifié qui évalue chaque NC ouverte et pousse les alertes en temps réel vers le frontend via un flux **SSE** — ce système a remplacé un ancien mécanisme par polling.
+
+| Niveau | Déclencheur | Traitement |
+|---|---|---|
+| ⚠️ **Warning** | NC toujours ouverte, échéance des 5 jours atteinte sous 24h | Alerte orange, assigné notifié |
+| 🚨 **Breached** | NC ouverte depuis plus de 5 jours (SLA dépassé) | Alerte rouge, assigné **et** manager notifiés, action requise |
+
+**Côté frontend**, ces alertes s'affichent dans un menu déroulant dédié (icône cloche, distincte du menu Notifications à l'icône enveloppe qui couvre les événements applicatifs génériques). Fonctionnalités du menu :
+- Tri : plus récentes / plus anciennes / breached en premier / warning en premier
+- Marquage individuel ou global comme lu
+- Suppression d'une alerte avec possibilité d'annuler (undo) juste après
+- Indicateur "Resolved" si la NC a été clôturée entre-temps (l'alerte reste visible mais n'est plus active)
+
+**Côté backend**, la logique vit dans `services/sla_service.py` (calcul des échéances, génération des alertes) ; le job périodique correspondant est référencé dans `app/jobs/` dans l'architecture cible. L'endpoint exact du flux SSE reste à documenter précisément (voir [Endpoints API](#endpoints-api)).
 
 ---
 
@@ -92,6 +132,7 @@ erDiagram
     USER ||--o{ NON_CONFORMANCE : lève
     USER ||--o{ NC_EVENT : déclenche
     USER ||--o{ AUDIT : mène
+    USER ||--o{ NOTIFICATION : reçoit
 
     NON_CONFORMANCE ||--o{ NC_EVENT : historise
     NON_CONFORMANCE ||--o{ ROOT_CAUSE : identifie
@@ -157,6 +198,14 @@ erDiagram
         uuid nc_id FK
         string severity
     }
+    NOTIFICATION {
+        uuid id PK
+        uuid user_id FK
+        string title
+        string message
+        boolean is_read
+        datetime created_at
+    }
 ```
 
 ---
@@ -170,7 +219,10 @@ erDiagram
 | Base de données | PostgreSQL |
 | Migrations | Alembic |
 | Authentification | JWT (bcrypt pour le hachage des mots de passe) |
+| Temps réel | SSE (Server-Sent Events) pour les alertes SLA |
+| Prédiction de risque | Modèle ML — extraction de features dans `app/ML/` |
 | Frontend | Angular 19 |
+| Conteneurisation | Docker, Docker Compose (environnement de dev avec hot-reload) |
 | Tests | Pytest, TestClient FastAPI |
 
 ---
@@ -179,39 +231,113 @@ erDiagram
 
 ```
 Nexus3/
+├── docker-compose.yml
 ├── backend/
+│   ├── Dockerfile.dev
+│   ├── .dockerignore
+│   ├── requirements.txt
+│   ├── alembic.ini
+│   ├── .env
 │   ├── app/
-│   │   ├── models/          # NonConformance, NCEvent, RootCause, CorrectiveAction,
-│   │   │                    # Audit, AuditFinding, User, Department, Organization
-│   │   ├── routers/         # nc_router, audit_router, auth_router, dashboard_router, export_router
-│   │   ├── services/        # state_machine.py, nc_service.py, audit_service.py
-│   │   ├── jobs/            # sla_job.py — vérification quotidienne des délais
-│   │   ├── enums.py         # NCState, Severity, NCType, NCStatus
-│   │   ├── auth.py          # Login, hachage, génération JWT
-│   │   ├── database.py      # Engine, Session
-│   │   └── main.py
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── database.py          # Engine, Session
+│   │   ├── deps.py               # Dépendances FastAPI (auth, DB session...)
+│   │   ├── enums.py              # NCState, Severity, NCType, NCStatus
+│   │   ├── auth.py               # Login, hachage, génération JWT
+│   │   ├── jobs/
+│   │   │   └── sla_job.py        # Vérification quotidienne des délais, alimente le flux SSE
+│   │   ├── ML/
+│   │   │   └── features.py       # Extraction de features pour la prédiction de risque
+│   │   ├── models/
+│   │   │   ├── non_conformance.py
+│   │   │   ├── nc_event.py
+│   │   │   ├── root_cause.py
+│   │   │   ├── corrective_action.py
+│   │   │   ├── audit_finding.py
+│   │   │   ├── departement.py
+│   │   │   ├── organisation.py
+│   │   │   ├── user.py
+│   │   │   ├── notification.py
+│   │   │   └── id_counter.py
+│   │   ├── routers/
+│   │   │   ├── nc_router.py
+│   │   │   ├── auth_router.py
+│   │   │   ├── dashboard_router.py
+│   │   │   ├── department_router.py
+│   │   │   ├── notification_router.py
+│   │   │   ├── root_cause_router.py
+│   │   │   ├── corrective_action_router.py
+│   │   │   └── export_router.py
+│   │   ├── services/
+│   │   │   ├── nc_service.py
+│   │   │   ├── sla_service.py
+│   │   │   ├── dashboard_service.py
+│   │   │   ├── department_service.py
+│   │   │   ├── notification_service.py
+│   │   │   └── delay_risk_service.py
+│   │   ├── schemas/
+│   │   │   ├── audit_schemas.py
+│   │   │   ├── dashboard_schemas.py
+│   │   │   └── nc_shcemas.py
+│   │   ├── seed_base.py
+│   │   ├── seed_org.py
+│   │   ├── seed_1000_ncs.py
+│   │   └── migrate_notif.py
 │   ├── alembic/
 │   └── tests/
+│       ├── conftest.py
+│       ├── test_audit_router.py
+│       ├── test_nc_router.py
+│       └── test_state_machine.py
 └── frontend/
+    ├── Dockerfile.dev
+    ├── proxy.conf.json
+    ├── .dockerignore
     └── src/app/
-        ├── authentication/  # signin, forgot-password, locked, page404/500
+        ├── authentication/       # signin, forgot-password, locked, page404/500
         ├── admin/
-        │   └── quality/     # nc-form, (à venir : nc-list, dashboard)
-        ├── core/            # services partagés (auth, nc), guards
-        └── shared/          # composants réutilisables
+        │   ├── dashboard/
+        │   └── quality/          # nc-form, nc-list, audits
+        ├── layout/                # header (alertes SLA + notifications), sidebar, main-layout
+        ├── core/                  # services partagés (auth, nc, department), guards
+        └── shared/                # composants réutilisables
 ```
 
 ---
 
 ## Installation
 
-### Prérequis
+### Option A — Avec Docker (recommandé pour le développement)
+
+Prérequis : Docker Desktop installé (avec l'intégration WSL2 activée si Windows).
+
+Fichier `.env` à la racine de `backend/` (nécessaire même en Docker — le conteneur le lit via le bind mount) :
+```env
+DATABASE_URL=postgresql://nexus_user:motdepasse@host.docker.internal:5432/nexus_p3
+JWT_SECRET=change-moi-en-production
+JWT_ALGORITHM=HS256
+```
+> ⚠️ Si PostgreSQL tourne sur ta machine hôte (et non dans un conteneur), utilise `host.docker.internal` et non `localhost` dans `DATABASE_URL` — depuis l'intérieur d'un conteneur, `localhost` pointe vers le conteneur lui-même, pas vers la machine hôte.
+
+Lancement :
+```bash
+docker compose up --build
+```
+
+→ Frontend : `http://localhost:4200` (les appels `/api/...` sont automatiquement redirigés vers le backend, pas de souci CORS)
+→ Backend : `http://localhost:8000/docs`
+
+> PostgreSQL n'est pas encore conteneurisé dans `docker-compose.yml` — utilise une instance locale ou distante existante (voir Option B pour la créer).
+
+### Option B — Installation manuelle
+
+**Prérequis**
 - Python 3.12+
 - PostgreSQL
 - Node.js + Angular CLI
 
-### Backend
-
+**Backend**
 ```bash
 cd backend
 python3 -m venv env
@@ -240,8 +366,7 @@ uvicorn app.main:app --reload
 
 → API : `http://localhost:8000` · Documentation interactive : `http://localhost:8000/docs`
 
-### Frontend
-
+**Frontend**
 ```bash
 cd frontend
 npm install --legacy-peer-deps
@@ -266,8 +391,14 @@ ng serve
 | `POST` | `/audits/` | Planifier un audit |
 | `POST` | `/audits/{id}/findings` | Ajouter un constat d'audit |
 | `POST` | `/audits/findings/{id}/escalate` | Escalader un constat en NC formelle |
+| `GET` | `/dashboard/*` | Indicateurs et KPI qualité |
+| `GET` | `/departments/*` | Gestion des départements |
+| `GET` | `/notifications/*` | Notifications in-app |
+| `GET` | `/export/*` | Export des non-conformités |
+| `GET` | `/sla/*` | Alertes SLA (warning / breached) — voir [Alertes SLA](#alertes-sla) |
+| `GET` | `/sla/stream` (SSE) | Flux temps réel des alertes SLA, remplace l'ancien polling |
 
-Documentation complète et interactive disponible via Swagger sur `/docs`.
+> Routes `dashboard`, `departments`, `notifications`, `export` et `sla` ajoutées récemment — détail des paramètres, réponses et chemins exacts à confirmer dans le code (`sla_router` / `sla_service.py`). La documentation complète et interactive reste disponible via Swagger sur `/docs`.
 
 ---
 
@@ -282,6 +413,19 @@ Couverture actuelle : machine à états (transitions valides/invalides), cycle d
 
 ---
 
+## État d'avancement
+
+- ✅ Non-conformités — machine à états, historique des transitions
+- ✅ Audits — planification, constats, escalade
+- ✅ Authentification JWT
+- ✅ Alertes SLA — migrées du polling vers un flux SSE
+- ✅ Notifications in-app
+- ✅ Gestion des départements & organisations
+- ✅ Dashboard (indicateurs qualité)
+- ✅ Export des non-conformités
+- ✅ Environnement de développement conteneurisé (Docker Compose, hot-reload)
+- ✅ Prédiction du risque de dépassement de délai (ML) 
+---
 
 <div align="center">
 

@@ -2,9 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Cache layer : on installe les deps avant de copier le reste du code
 COPY package*.json ./
-RUN npm install
+
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
@@ -12,6 +12,7 @@ EXPOSE 4200
 
 # --host 0.0.0.0      
 # --proxy-config      
-# --poll 2000         
-
+# --poll 2000         : force Angular à vérifier les changements de fichiers toutes les 2s
+#                        (nécessaire car les événements filesystem natifs ne traversent pas
+#                        toujours les bind mounts Docker, notamment sur Mac/Windows)
 CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--proxy-config", "proxy.conf.json", "--poll", "2000"]
