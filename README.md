@@ -415,8 +415,7 @@ pytest tests/ -v --cov=app --cov-report=term-missing
 - [x] **Streaming d'Alertes SLA (SSE)** : Remplacement du polling par des Server-Sent Events.
 - [x] **Module Prédictif ML** : Inférence du risque de retard de clôture.
 - [x] **Conteneurisation Docker** : Environnement de développement standardisé.
-- [ ] **Rapports PDF automatisés** : Génération de fiches 8D / fiches de non-conformité exportables.
-- [ ] **Intégration Webhook externe** : Notifications Slack / Microsoft Teams pour les alertes critiques.
+
 
 ---
 
