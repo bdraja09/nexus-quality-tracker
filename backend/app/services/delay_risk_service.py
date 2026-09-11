@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_MODEL_PATH = (
     Path(__file__).resolve().parent.parent
     / "ML"
-    / "delay_risk_v1.joblib"
+    / "delay_risk_best_model.joblib"
 )
 MODEL_PATH = Path(os.getenv("DELAY_RISK_MODEL_PATH", _DEFAULT_MODEL_PATH))
 

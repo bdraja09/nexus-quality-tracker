@@ -12,13 +12,12 @@ venv/
 # Cache Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 *.so
 
 # Variables d'environnement (secrets, jamais commitées)
 .env
 .env.*
-!.env.example
 
 # Logs
 *.log
@@ -26,10 +25,19 @@ __pycache__/
 # Alembic — versions gardées, mais pas les caches
 backend/alembic/__pycache__/
 
-# Tests / couverture
+# Tests / couverture Python & Backend
+tests/
+test/
+backend/tests/
+test_*.py
+*_test.py
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
 
 # Distribution / build Python
 build/
@@ -52,14 +60,44 @@ node_modules/
 dist/
 .angular/
 frontend/.angular/
+out-tsc/
+bazel-out/
 
 # Cache npm
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # Fichiers d'environnement Angular sensibles (si utilisés)
 frontend/src/environments/environment.prod.ts
+
+# Tests & couverture Frontend
+*.spec.ts
+*.test.ts
+*.spec.js
+*.test.js
+coverage/
+frontend/coverage/
+.nyc_output/
+
+
+# ============================================================
+# Fichiers et scripts de Seed / Données de test
+# ============================================================
+
+*seed*.py
+backend/app/seed*.py
+backend/app/seeds/
+seed/
+seeds/
+*seed*.sql
+*seed*.json
+*seed*.csv
+fixtures/
+test_data/
+create_test_user.py
+*.local.py
 
 
 # ============================================================
@@ -67,8 +105,6 @@ frontend/src/environments/environment.prod.ts
 # ============================================================
 
 .vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
@@ -84,13 +120,11 @@ desktop.ini
 
 
 # ============================================================
-# Divers projet
+# Divers projet & Exports ML
 # ============================================================
-
-# Scripts de données de test générées localement (pas les tables/CSV finaux)
-create_test_user.py
-*.local.py
 
 # Exports de données générés (dataset ML, s'ils sont volumineux)
 /exports/*.csv
 /exports/*.json
+*.joblib
+*.pkl

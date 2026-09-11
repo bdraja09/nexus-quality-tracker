@@ -6,7 +6,6 @@ import pandas as pd
 
 
 # ─── Constantes partagées entre training et inference ──────────────────────────
-# Doivent être IDENTIQUES à celles utilisées dans le notebook d'entraînement.
 SEVERITY_ORDER = {
     "low": 0,
     "medium": 1,
@@ -14,9 +13,7 @@ SEVERITY_ORDER = {
     "critical": 3,
 }
 
-# Ordre EXACT des colonnes attendues par le Pipeline sklearn.
-# NOTE : dept_id et raised_by_role sont passés BRUTS (chaînes) car le
-# Pipeline intègre un OneHotEncoder sur ces colonnes.
+
 ALL_FEATURES = [
     "dept_id",
     "severity_encoded",
@@ -31,23 +28,6 @@ ALL_FEATURES = [
 
 # ─── Feature Engineering ─────────────────────────────────────────────────────
 def build_features_for_inference(records: list[dict[str, Any]]) -> pd.DataFrame:
-    """
-    Transforme des records bruts en DataFrame prêt pour .predict_proba().
-
-    Parameters
-    ----------
-    records : list[dict]
-        Chaque dict doit contenir au minimum :
-        - dept_id (str) — passé brut au OneHotEncoder du pipeline
-        - severity (str) — encodé manuellement en ordinal
-        - raised_by_role (str) — passé brut au OneHotEncoder du pipeline
-        - raised_at (str | pd.Timestamp | datetime)
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame avec les colonnes dans ALL_FEATURES, dans l'ordre exact.
-    """
     if not records:
         return pd.DataFrame(columns=ALL_FEATURES)
 
@@ -67,13 +47,9 @@ def build_features_for_inference(records: list[dict[str, Any]]) -> pd.DataFrame:
         )
 
     # ─── raised_by_role : passé BRUT au pipeline sklearn ─────────────────────
-    # Le OneHotEncoder a été entraîné sur les chaînes brutes (ex: "Manager",
-    # "Operator"). On ne fait ici qu'un strip pour robustesse, sans lower()
-    # ni replace(), sinon on crée des catégories inconnues pour le modèle.
     df["raised_by_role"] = df["raised_by_role"].astype(str).str.strip()
 
     # ─── dept_id : passé BRUT au pipeline sklearn ────────────────────────────
-    # La DB stocke dept_id en str. Le pipeline l'a vu comme chaîne.
     df["dept_id"] = df["dept_id"].astype(str).str.strip()
 
     # ─── Features temporelles (doivent matcher EXACTEMENT le notebook) ─────
@@ -95,10 +71,6 @@ def build_features_for_inference(records: list[dict[str, Any]]) -> pd.DataFrame:
 def validate_against_training(
     inference_df: pd.DataFrame, training_feature_names: list[str] | pd.Index
 ) -> None:
-    """
-    À appeler au démarrage du service pour garantir zéro dérive.
-    Peut être utilisé dans les tests CI.
-    """
     train_cols = list(training_feature_names)
     infer_cols = list(inference_df.columns)
 
